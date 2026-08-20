@@ -107,16 +107,34 @@ canvas {
 
 .hud {
   display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: clamp(6px, 1.8vw, 14px);
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: clamp(9.5px, 2.55vw, 11px);
   color: var(--muted);
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  min-height: 1.35em;
+  line-height: 1.35;
 }
 
-.hud b { color: var(--text); font-weight: 500; }
+.hud::-webkit-scrollbar { display: none; }
+
+.hud > span { flex: 0 0 auto; }
+
+.hud b {
+  color: var(--text);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
 .hud .a { color: var(--teal); }
 .hud .b { color: var(--ember); }
+
+.hud .lbl-full { display: inline; }
+.hud .lbl-short { display: none; }
 
 .note-readout {
   font-family: var(--mono);
@@ -276,6 +294,9 @@ input[type="number"], select {
   #timeline {
     height: 110px;
   }
+
+  .hud .lbl-full { display: none; }
+  .hud .lbl-short { display: inline; }
 
   .debug {
     padding: 8px 14px 16px;
