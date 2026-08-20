@@ -32,8 +32,8 @@ button, input, select { font-family: inherit; color: inherit; }
 
 .app {
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  min-height: 100vh;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 100dvh;
   max-width: 1440px;
   margin: 0 auto;
 }
@@ -45,6 +45,7 @@ header {
   gap: 16px;
   padding: 16px 22px 8px;
   border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
 }
 
 .brand h1 {
@@ -235,7 +236,75 @@ input[type="number"], select {
 .v3 { background: var(--pink); }
 
 @media (max-width: 960px) {
-  .stage { grid-template-columns: 1fr; }
-  .controls { max-height: none; }
-  .viz { min-height: 520px; }
+  .app {
+    grid-template-rows: auto auto auto;
+    min-height: unset;
+  }
+
+  header {
+    padding: 12px 14px 10px;
+    align-items: flex-start;
+  }
+
+  .transport {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .stage {
+    grid-template-columns: 1fr;
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .controls {
+    max-height: none;
+  }
+
+  .viz {
+    grid-template-rows: auto auto 110px;
+    min-height: 0;
+  }
+
+  #attractor {
+    width: 100%;
+    height: auto;
+    max-height: min(72vw, 420px);
+    aspect-ratio: 1 / 1;
+  }
+
+  #timeline {
+    height: 110px;
+  }
+
+  .debug {
+    padding: 8px 14px 16px;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .field.span2 {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 480px) {
+  html, body {
+    font-size: 13px;
+  }
+
+  .brand h1 {
+    font-size: 16px;
+    letter-spacing: 0.14em;
+  }
+
+  button {
+    padding: 8px 10px;
+  }
+
+  #attractor {
+    max-height: min(88vw, 360px);
+  }
 }
