@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LORENZ — chaotic sequencer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <h1>Lorenz</h1>
+        <p>deterministic chaos as sequencer</p>
+      </div>
+      <div class="transport">
+        <button class="primary" id="playBtn">Play</button>
+        <button id="pauseBtn">Pause</button>
+        <button id="resetBtn">Reset</button>
+        <button class="danger" id="perturbBtn" title="Nudge x0 by 1e-6">Perturb seed</button>
+      </div>
+    </header>
+
+    <div class="stage">
+      <section class="viz">
+        <canvas id="attractor"></canvas>
+        <div>
+          <div class="hud">
+            <span>t <b id="hudT">0.000</b></span>
+            <span>x <b id="hudX">0.00</b></span>
+            <span>y <b id="hudY">0.00</b></span>
+            <span>z <b id="hudZ">0.00</b></span>
+            <span class="a">A <b id="hudLobe">—</b></span>
+            <span>events <b id="hudEvents">0</b></span>
+            <span>notes <b id="hudNotes">0</b></span>
+          </div>
+          <div class="note-readout" id="noteReadout">waiting for play</div>
+        </div>
+        <canvas id="timeline"></canvas>
+      </section>
+
+      <aside class="controls">
+        <details class="panel" open>
+          <summary>Lorenz attractor</summary>
+          <div class="row">
+            <div class="field">
+              <span class="lbl">σ sigma</span>
+              <input type="range" id="sigma" min="1" max="20" step="0.1" value="10" />
+              <output id="sigmaOut">10</output>
+            </div>
+            <div class="field">
+              <span class="lbl">ρ rho</span>
+              <input type="range" id="rho" min="0.5" max="50" step="0.1" value="28" />
+              <output id="rhoOut">28</output>
+            </div>
+            <div class="field">
+              <span class="lbl">β beta</span>
+              <input type="range" id="beta" min="0.2" max="8" step="0.01" value="2.6667" />
+              <output id="betaOut">2.67</output>
+            </div>
+            <div class="field">
+              <span class="lbl">dt</span>
+              <input type="range" id="dt" min="0.002" max="0.03" step="0.001" value="0.01" />
+              <output id="dtOut">0.010</output>
+            </div>
+            <div class="field">
+              <span class="lbl">simulation speed</span>
+              <input type="range" id="speed" min="0.2" max="6" step="0.05" value="2.6" />
+              <output id="speedOut">2.60</output>
+            </div>
+            <div class="field">
+              <span class="lbl">projection</span>
+              <select id="projection">
+                <option value="xy">X / Y</option>
+                <option value="xz">X / Z (butterfly)</option>
+              </select>
+            </div>
+            <div class="field">
+              <span class="lbl">x₀ seed</span>
+              <input type="number" id="x0" step="0.000001" value="0.1" />
+            </div>
+            <div class="field">
+              <span class="lbl">y₀ seed</span>
+              <input type="number" id="y0" step="0.000001" value="0" />
+            </div>
+            <div class="field">
+              <span class="lbl">z₀ seed</span>
+              <input type="number" id="z0" step="0.000001" value="0" />
+            </div>
+          </div>
+        </details>
+
+        <details class="panel" open>
+          <summary>Harmony</summary>
+          <div class="row">
+            <div class="field">
+              <span class="lbl">root</span>
+              <select id="root"></select>
+            </div>
+            <div class="field">
+              <span class="lbl">scale</span>
+              <select id="scale"></select>
+            </div>
+          </div>
+        </details>
+
+        <details class="panel" open>
+          <summary>Lobes (musical states)</summary>
+          <div class="row">
+            <div class="field">
+              <span class="lbl">A octave</span>
+              <input type="range" id="lobeAOctave" min="-2" max="2" step="1" value="0" />
+              <output id="lobeAOctaveOut">0</output>
+            </div>
+            <div class="field">
+              <span class="lbl">B octave</span>
+              <input type="range" id="lobeBOctave" min="-2" max="2" step="1" value="1" />
+              <output id="lobeBOctaveOut">1</output>
+            </div>
+            <div class="field">
+              <span class="lbl">A velocity</span>
+              <input type="range" id="lobeAVel" min="0.2" max="2" step="0.05" value="0.85" />
+              <output id="lobeAVelOut">0.85</output>
+            </div>
+            <div class="field">
+              <span class="lbl">B velocity</span>
+              <input type="range" id="lobeBVel" min="0.2" max="2" step="0.05" value="1.15" />
+              <output id="lobeBVelOut">1.15</output>
+            </div>
+            <div class="field">
+              <span class="lbl">A duration</span>
+              <input type="range" id="lobeADur" min="0.3" max="2.5" step="0.05" value="1.2" />
+              <output id="lobeADurOut">1.20</output>
+            </div>
+            <div class="field">
+              <span class="lbl">B duration</span>
+              <input type="range" id="lobeBDur" min="0.3" max="2.5" step="0.05" value="0.8" />
+              <output id="lobeBDurOut">0.80</output>
+            </div>
+            <div class="field">
+              <span class="lbl">A pan</span>
+              <input type="range" id="lobeAPan" min="-1" max="1" step="0.05" value="-0.35" />
+              <output id="lobeAPanOut">-0.35</output>
+            </div>
+            <div class="field">
+              <span class="lbl">B pan</span>
+              <input type="range" id="lobeBPan" min="-1" max="1" step="0.05" value="0.35" />
+              <output id="lobeBPanOut">0.35</output>
+            </div>
+            <div class="field">
+              <span class="lbl">A filter</span>
+              <input type="range" id="lobeAFilter" min="200" max="6000" step="10" value="900" />
+              <output id="lobeAFilterOut">900</output>
+            </div>
+            <div class="field">
+              <span class="lbl">B filter</span>
+              <input type="range" id="lobeBFilter" min="200" max="6000" step="10" value="2400" />
+              <output id="lobeBFilterOut">2400</output>
+            </div>
+            <div class="field">
+              <span class="lbl">A scale override</span>
+              <select id="lobeAScale"></select>
+            </div>
+            <div class="field">
+              <span class="lbl">B scale override</span>
+              <select id="lobeBScale"></select>
+            </div>
+            <div class="field">
+              <span class="lbl">A degree weights</span>
+              <select id="lobeAWeights">
+                <option value="even">Even</option>
+                <option value="tonic" selected>Tonic-heavy</option>
+                <option value="color">Color tones</option>
+              </select>
+            </div>
+            <div class="field">
+              <span class="lbl">B degree weights</span>
+              <select id="lobeBWeights">
+                <option value="even" selected>Even</option>
+                <option value="tonic">Tonic-heavy</option>
+                <option value="color">Color tones</option>
+              </select>
+            </div>
+          </div>
+        </details>
+
+        <details class="panel" open>
+          <summary>Rhythm</summary>
+          <div class="row">
+            <div class="field span2">
+              <span class="lbl checks">
+                <label><input type="checkbox" id="quantize" /> quantize</label>
+              </span>
+            </div>
+            <div class="field">
+              <span class="lbl">grid</span>
+              <select id="grid">
+                <option value="1/4">1/4</option>
+                <option value="1/8" selected>1/8</option>
+                <option value="1/16">1/16</option>
+                <option value="triplets">triplets</option>
+              </select>
+            </div>
+            <div class="field">
+              <span class="lbl">BPM</span>
+              <input type="range" id="bpm" min="40" max="180" step="1" value="92" />
+              <output id="bpmOut">92</output>
+            </div>
+            <div class="field span2">
+              <span class="lbl">timing influence (chaos → grid)</span>
+              <input type="range" id="timingInfluence" min="0" max="1" step="0.01" value="0" />
+              <output id="timingInfluenceOut">0.00</output>
+            </div>
+          </div>
+        </details>
+
+        <details class="panel" open>
+          <summary>Density</summary>
+          <div class="row">
+            <div class="field">
+              <span class="lbl">mode</span>
+              <select id="densityMode">
+                <option value="all">Every event</option>
+                <option value="nth">Every Nth</option>
+                <option value="probability">Probability (optional)</option>
+                <option value="velocity-threshold">Velocity threshold</option>
+                <option value="custom-threshold">Custom threshold</option>
+              </select>
+            </div>
+            <div class="field">
+              <span class="lbl">N</span>
+              <input type="range" id="nth" min="1" max="8" step="1" value="1" />
+              <output id="nthOut">1</output>
+            </div>
+            <div class="field">
+              <span class="lbl">probability</span>
+              <input type="range" id="probability" min="0" max="1" step="0.01" value="1" />
+              <output id="probabilityOut">1.00</output>
+            </div>
+            <div class="field">
+              <span class="lbl">velocity min</span>
+              <input type="range" id="velocityThreshold" min="0" max="80" step="0.5" value="0" />
+              <output id="velocityThresholdOut">0</output>
+            </div>
+            <div class="field">
+              <span class="lbl">custom metric</span>
+              <select id="customMetric">
+                <option value="distance">distance</option>
+                <option value="velocity">velocity</option>
+                <option value="z">z</option>
+                <option value="y">|y|</option>
+              </select>
+            </div>
+            <div class="field">
+              <span class="lbl">custom min</span>
+              <input type="range" id="customThreshold" min="0" max="50" step="0.5" value="0" />
+              <output id="customThresholdOut">0</output>
+            </div>
+            <div class="field">
+              <span class="lbl">Z threshold (voice 3)</span>
+              <input type="range" id="zThreshold" min="10" max="45" step="0.5" value="25" />
+              <output id="zThresholdOut">25</output>
+            </div>
+          </div>
+        </details>
+
+        <details class="panel" open>
+          <summary>Voices</summary>
+          <div class="row">
+            <div class="field span2 checks">
+              <label><input type="checkbox" id="voice1Enable" checked /><span class="voice-dot v1"></span>Voice 1 · X crossings</label>
+            </div>
+            <div class="field">
+              <span class="lbl">voice 1 waveform</span>
+              <select id="voice1Wave">
+                <option>sine</option>
+                <option selected>triangle</option>
+                <option>sawtooth</option>
+                <option>square</option>
+                <option>noise</option>
+              </select>
+            </div>
+            <div class="field span2 checks">
+              <label><input type="checkbox" id="voice2Enable" /><span class="voice-dot v2"></span>Voice 2 · Y extrema</label>
+            </div>
+            <div class="field">
+              <span class="lbl">voice 2 waveform</span>
+              <select id="voice2Wave">
+                <option>sine</option>
+                <option>triangle</option>
+                <option selected>sawtooth</option>
+                <option>square</option>
+                <option>noise</option>
+              </select>
+            </div>
+            <div class="field span2 checks">
+              <label><input type="checkbox" id="voice3Enable" /><span class="voice-dot v3"></span>Voice 3 · Z threshold</label>
+            </div>
+            <div class="field">
+              <span class="lbl">voice 3 waveform</span>
+              <select id="voice3Wave">
+                <option>sine</option>
+                <option>triangle</option>
+                <option>sawtooth</option>
+                <option>square</option>
+                <option selected>noise</option>
+              </select>
+            </div>
+          </div>
+        </details>
+
+        <details class="panel">
+          <summary>Synth</summary>
+          <div class="row">
+            <div class="field">
+              <span class="lbl">attack</span>
+              <input type="range" id="attack" min="0.001" max="0.4" step="0.001" value="0.012" />
+              <output id="attackOut">0.012</output>
+            </div>
+            <div class="field">
+              <span class="lbl">decay</span>
+              <input type="range" id="decay" min="0.01" max="0.8" step="0.01" value="0.14" />
+              <output id="decayOut">0.14</output>
+            </div>
+            <div class="field">
+              <span class="lbl">sustain</span>
+              <input type="range" id="sustain" min="0.05" max="1" step="0.01" value="0.5" />
+              <output id="sustainOut">0.50</output>
+            </div>
+            <div class="field">
+              <span class="lbl">release</span>
+              <input type="range" id="release" min="0.02" max="1.2" step="0.01" value="0.22" />
+              <output id="releaseOut">0.22</output>
+            </div>
+            <div class="field">
+              <span class="lbl">cutoff</span>
+              <input type="range" id="cutoff" min="120" max="8000" step="10" value="1600" />
+              <output id="cutoffOut">1600</output>
+            </div>
+            <div class="field">
+              <span class="lbl">resonance</span>
+              <input type="range" id="resonance" min="0.1" max="18" step="0.1" value="1.2" />
+              <output id="resonanceOut">1.2</output>
+            </div>
+            <div class="field">
+              <span class="lbl">master</span>
+              <input type="range" id="master" min="0" max="1" step="0.01" value="0.7" />
+              <output id="masterOut">0.70</output>
+            </div>
+          </div>
+        </details>
+
+        <details class="panel">
+          <summary>Modulation</summary>
+          <div class="row">
+            <div class="field">
+              <span class="lbl">filter from Z</span>
+              <input type="range" id="modulateFilter" min="0" max="1" step="0.01" value="0" />
+              <output id="modulateFilterOut">0.00</output>
+            </div>
+            <div class="field">
+              <span class="lbl">pan from X</span>
+              <input type="range" id="modulatePan" min="0" max="1" step="0.01" value="0" />
+              <output id="modulatePanOut">0.00</output>
+            </div>
+            <div class="field">
+              <span class="lbl">FM from velocity</span>
+              <input type="range" id="modulateFm" min="0" max="1" step="0.01" value="0" />
+              <output id="modulateFmOut">0.00</output>
+            </div>
+          </div>
+        </details>
+
+        <details class="panel" open>
+          <summary>Diagnostics</summary>
+          <div class="checks">
+            <label><input type="checkbox" id="diagnostics" checked /> show event log</label>
+          </div>
+        </details>
+      </aside>
+    </div>
+
+    <section class="debug" id="debugPanel">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>t</th>
+            <th>dir</th>
+            <th>x</th>
+            <th>y</th>
+            <th>z</th>
+            <th>vel</th>
+            <th>pitch</th>
+            <th>midi</th>
+            <th>dur</th>
+            <th>voice</th>
+          </tr>
+        </thead>
+        <tbody id="debugBody"></tbody>
+      </table>
+    </section>
+  </div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

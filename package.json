@@ -1,0 +1,9 @@
+{
+  "name": "lorenz-sequencer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "test": "node tests/pipeline.test.js"
+  }
+}
