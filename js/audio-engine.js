@@ -28,7 +28,7 @@ export class AudioEngine {
   }
 
   configureVoice(id, config) {
-    this.voiceConfigs.set(id, { ...(this.voiceConfigs.get(id) ?? {}), ...config });
+    this.voiceConfigs.set(id, { ...this.voiceConfigs.get(id), ...config });
     const voice = this.voices.get(id);
     if (voice) voice.setConfig(this.voiceConfigs.get(id));
   }

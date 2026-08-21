@@ -115,9 +115,9 @@ export class MusicalMapper {
     this.octaveRange = config.octaveRange ?? this.octaveRange ?? [2, 5];
     this.durationRange = config.durationRange ?? this.durationRange ?? [0.08, 0.55];
     this.velocityRange = config.velocityRange ?? this.velocityRange ?? [0.15, 0.95];
-    this.bounds = { ...LORENZ_BOUNDS, ...(config.bounds ?? {}) };
-    this.lobeA = { ...DEFAULT_LOBE, ...(this.lobeA ?? {}), ...(config.lobeA ?? {}) };
-    this.lobeB = { ...DEFAULT_LOBE, ...(this.lobeB ?? {}), ...(config.lobeB ?? {}) };
+    this.bounds = { ...LORENZ_BOUNDS, ...config.bounds };
+    this.lobeA = { ...DEFAULT_LOBE, ...this.lobeA, ...config.lobeA };
+    this.lobeB = { ...DEFAULT_LOBE, ...this.lobeB, ...config.lobeB };
   }
 
   lobeConfig(lobe) {
