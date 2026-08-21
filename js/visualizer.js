@@ -1,5 +1,5 @@
 /**
- * Visualizer — Lorenz trajectory, event markers, and a note timeline.
+ * Visualizer — chaotic trajectory, event markers, and a note timeline.
  * Driven by recorded samples; playback cursor follows the audio clock.
  */
 
@@ -36,7 +36,9 @@ export class Visualizer {
     this.maxPoints = 4500;
     this.maxEvents = 120;
     this.maxNotes = 240;
-    this.playbackLorenzT = 0;
+    this.playbackT = 0;
+    this.systemLabel = "Lorenz";
+    this.viewBounds = { x: [-25, 25], y: [-32, 32], z: [0, 52] };
     this.current = null;
     this.visiblePoints = [];
     this.visibleEvents = [];
@@ -50,7 +52,7 @@ export class Visualizer {
     this.events = [];
     this.notes = [];
     this.current = null;
-    this.playbackLorenzT = 0;
+    this.playbackT = 0;
   }
 
   addPoint(state) {
@@ -71,12 +73,17 @@ export class Visualizer {
     if (this.notes.length > this.maxNotes) this.notes.shift();
   }
 
-  setPlayback(lorenzT) {
-    this.playbackLorenzT = lorenzT;
+  setSystem(definition) {
+    this.systemLabel = definition.label;
+    this.viewBounds = definition.viewBounds;
+  }
+
+  setPlayback(simulationT) {
+    this.playbackT = simulationT;
   }
 
   draw(nowAudio = 0) {
-    const cut = this.playbackLorenzT;
+    const cut = this.playbackT;
     this.visiblePoints = this.points.filter((p) => p.t <= cut + 1e-9);
     this.visibleEvents = this.events.filter((e) => e.timestamp <= cut + 1e-9);
     this.current = this.visiblePoints.at(-1) ?? null;
@@ -105,21 +112,13 @@ export class Visualizer {
     const pad = 28 * this.dpr;
     const usableW = w - pad * 2;
     const usableH = h - pad * 2;
-    let dataX;
-    let dataY;
-    let rangeW;
-    let rangeH;
-    if (this.projection === "xz") {
-      dataX = p.x + 25;
-      dataY = 52 - p.z;
-      rangeW = 50;
-      rangeH = 52;
-    } else {
-      dataX = p.x + 25;
-      dataY = 32 - p.y;
-      rangeW = 50;
-      rangeH = 64;
-    }
+    const verticalAxis = this.projection === "xz" ? "z" : "y";
+    const [xLo, xHi] = this.viewBounds.x;
+    const [yLo, yHi] = this.viewBounds[verticalAxis];
+    const dataX = p.x - xLo;
+    const dataY = yHi - p[verticalAxis];
+    const rangeW = xHi - xLo;
+    const rangeH = yHi - yLo;
     // Uniform scale so tall/narrow canvases (phones) don't stretch the attractor.
     const scale = Math.min(usableW / rangeW, usableH / rangeH);
     const drawnW = rangeW * scale;
@@ -142,7 +141,7 @@ export class Visualizer {
     ctx.fillRect(0, 0, w, h);
     this._grid(ctx, w, h);
 
-    const origin = this._mapPoint({ x: 0, y: 0, z: 25 }, w, h);
+    const origin = this._mapPoint({ x: 0, y: 0, z: 0 }, w, h);
     ctx.strokeStyle = "rgba(255,255,255,0.08)";
     ctx.lineWidth = this.dpr;
     ctx.beginPath();
@@ -197,8 +196,8 @@ export class Visualizer {
 
     ctx.fillStyle = "rgba(230,236,245,0.45)";
     ctx.font = `${11 * this.dpr}px "IBM Plex Mono", ui-monospace, monospace`;
-    const label =
-      this.projection === "xz" ? "X / Z  ·  butterfly" : "X / Y  ·  trajectory";
+    const axes = this.projection === "xz" ? "X / Z" : "X / Y";
+    const label = `${axes}  ·  ${this.systemLabel}`;
     ctx.fillText(label, 14 * this.dpr, 18 * this.dpr);
     ctx.fillStyle = LOBE_A.fill;
     ctx.fillText("lobe A  x<0", 14 * this.dpr, h - 16 * this.dpr);

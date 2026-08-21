@@ -11,9 +11,7 @@
  */
 
 export const CONTROL_IDS = [
-  "sigma",
-  "rho",
-  "beta",
+  "systemId",
   "dt",
   "speed",
   "projection",
@@ -53,6 +51,11 @@ export const CONTROL_IDS = [
   "voice2Wave",
   "voice3Enable",
   "voice3Wave",
+  "internalAudio",
+  "midiEnable",
+  "midiChannel1",
+  "midiChannel2",
+  "midiChannel3",
   "attack",
   "decay",
   "sustain",
@@ -79,17 +82,52 @@ export function capturePreset(name = "") {
       params[id] = Number.isFinite(n) ? n : el.value;
     } else params[id] = el.value;
   }
-  return { v: 1, name: name || undefined, params };
+  const parameterInputs = document.querySelectorAll?.("[data-attractor-param]") ?? [];
+  params.attractorParams = Object.fromEntries(
+    [...parameterInputs].map((el) => {
+      const n = Number(el.value);
+      return [el.dataset.attractorParam, Number.isFinite(n) ? n : el.value];
+    }),
+  );
+  return { v: 2, name: name || undefined, params };
 }
 
 export function applyPresetToDom(preset) {
-  const params = preset?.params ?? {};
+  const params = normalizePreset(preset).params;
   for (const [id, value] of Object.entries(params)) {
-    const el = document.getElementById(id);
-    if (!el) continue;
-    if (el.type === "checkbox") el.checked = Boolean(value);
-    else el.value = value == null ? "" : String(value);
+    if (id === "attractorParams") continue;
+    setControlValue(id, value);
   }
+  for (const [key, value] of Object.entries(params.attractorParams)) {
+    setControlValue(`systemParam-${key}`, value);
+  }
+}
+
+function setControlValue(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.type === "checkbox") el.checked = Boolean(value);
+  else el.value = value == null ? "" : String(value);
+}
+
+export function normalizePreset(preset) {
+  const source = preset && typeof preset === "object" ? preset : {};
+  const params = { ...(source.params ?? {}) };
+  params.systemId ||= "lorenz";
+  if (!params.attractorParams || typeof params.attractorParams !== "object") {
+    params.attractorParams =
+      params.systemId === "lorenz"
+        ? {
+            sigma: params.sigma ?? 10,
+            rho: params.rho ?? 28,
+            beta: params.beta ?? 8 / 3,
+          }
+        : {};
+  }
+  delete params.sigma;
+  delete params.rho;
+  delete params.beta;
+  return { ...source, v: 2, params };
 }
 
 export function encodeState(preset) {

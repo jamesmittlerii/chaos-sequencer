@@ -39,14 +39,14 @@ export class Sequencer {
   }
 
   /**
-   * Lorenz timestamp (system time of the ODE) → AudioContext time.
+   * Simulation timestamp (system time of the ODE) → AudioContext time.
    */
-  lorenzToAudio(lorenzT) {
-    return this.audioStart + lorenzT / Math.max(0.05, this.speed);
+  simulationToAudio(simulationT) {
+    return this.audioStart + simulationT / Math.max(0.05, this.speed);
   }
 
-  schedule(lorenzT) {
-    const chaotic = this.lorenzToAudio(lorenzT);
+  schedule(simulationT) {
+    const chaotic = this.simulationToAudio(simulationT);
     if (!this.quantize || this.timingInfluence <= 0) return chaotic;
 
     const quantized = this.quantizeTime(chaotic);

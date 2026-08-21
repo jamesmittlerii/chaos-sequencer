@@ -12,6 +12,7 @@ import {
   fetchCatalogIndex,
   fetchCatalogPreset,
   listLocalPresets,
+  normalizePreset,
   parseLocation,
   saveLocalPreset,
   shareUrl,
@@ -118,31 +119,57 @@ test("share and catalog URLs discard queries and encode their payloads", () => {
 
 test("capturePreset reads supported DOM control values", async () => {
   const controls = {
-    sigma: { type: "number", value: "10.5" },
-    rho: { type: "range", value: "not-a-number" },
+    systemId: { type: "select-one", value: "rossler" },
     voice1Enable: { type: "checkbox", checked: true },
     root: { type: "select-one", value: "D" },
   };
+  const attractorControls = [
+    { value: "0.25", dataset: { attractorParam: "a" } },
+    { value: "not-a-number", dataset: { attractorParam: "b" } },
+  ];
   await withGlobals(
     {
       document: {
         getElementById(id) {
           return controls[id] ?? null;
         },
+        querySelectorAll() {
+          return attractorControls;
+        },
       },
     },
     () => {
       assert.deepEqual(capturePreset("Example"), {
-        v: 1,
+        v: 2,
         name: "Example",
         params: {
-          sigma: 10.5,
-          rho: "not-a-number",
+          systemId: "rossler",
           root: "D",
           voice1Enable: true,
+          attractorParams: {
+            a: 0.25,
+            b: "not-a-number",
+          },
         },
       });
       assert.equal(capturePreset().name, undefined);
+    },
+  );
+});
+
+test("legacy presets migrate to Lorenz system parameters", () => {
+  assert.deepEqual(
+    normalizePreset({
+      v: 1,
+      params: { sigma: 12, rho: 30, beta: 2.5, root: "E" },
+    }),
+    {
+      v: 2,
+      params: {
+        systemId: "lorenz",
+        attractorParams: { sigma: 12, rho: 30, beta: 2.5 },
+        root: "E",
+      },
     },
   );
 });

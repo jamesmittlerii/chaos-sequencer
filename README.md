@@ -1,6 +1,6 @@
 # Lorenz — chaotic sequencer
 
-A real-time generative music system. A Lorenz attractor is integrated as a dynamical system, its trajectory is analyzed for geometric events, and those events are mapped onto notes, rhythm, and a simple synthesizer.
+A real-time generative music system. Choose Lorenz, Chua, Rössler, Thomas, Aizawa, Halvorsen, or Rabinovich–Fabrikant; the selected flow is analyzed for geometric events and mapped onto notes, rhythm, Web MIDI, and a simple synthesizer.
 
 The attractor never writes the audio waveform. It only produces a stream of `(x, y, z)` states. Music is derived from features of that trajectory.
 
@@ -24,7 +24,7 @@ npm test    # pipeline determinism / RK4 bounds / preset encoding
 
 ## Shareable presets
 
-The address bar is the preset. **Copy link** puts a URL on the clipboard that recreates every control, including the Lorenz seed.
+The address bar is the preset. **Copy link** puts a URL on the clipboard that recreates every control, including the selected system, its parameters, and seed.
 
 Examples:
 
@@ -38,7 +38,7 @@ Library presets are JSON files in `presets/`. Add `presets/my-pad.json` and list
 ## Pipeline
 
 ```text
-Lorenz mathematics
+Selected chaotic flow
     → trajectory (x, y, z, t)
     → event detection
     → musical mapping
@@ -48,15 +48,15 @@ Lorenz mathematics
 
 | Stage | Module | Responsibility |
 |---|---|---|
-| 1 | `js/lorenz.js` | RK4 integration of the Lorenz ODE. No musical knowledge. |
+| 1 | `js/attractors.js` | Seven-system registry and RK4 integration. No musical knowledge. |
 | 2 | `js/chaos-analyzer.js` | Zero crossings, extrema, distance, velocity, thresholds. |
 | 3 | `js/event-generator.js` | Density, voice routing. Deterministic unless probability mode is on. |
 | 4 | `js/musical-mapper.js` | Normalized features → scale degrees, velocity, duration, register. |
-| 5 | `js/sequencer.js` | Lorenz time → audio clock; optional quantization blend. |
+| 5 | `js/sequencer.js` | Simulation time → audio clock; optional quantization blend. |
 | 6 | `js/synth-voice.js` | Oscillator, ADSR, low-pass, pan. |
 | 7 | `js/audio-engine.js` | AudioContext, master bus, voices. |
 
-You can replace `LorenzAttractor` with another flow (Rössler, Chua, Duffing) as long as `step()` returns `{ x, y, z, t }`.
+Every registered flow returns the same `{ x, y, z, t, dx, dy, dz }` state shape, so the musical pipeline remains independent of its equations.
 
 ## Default mapping (voice 1)
 
@@ -65,9 +65,9 @@ You can replace `LorenzAttractor` with another flow (Rössler, Chua, Duffing) as
 - **Z** maps to velocity
 - **Trajectory speed** maps to duration (faster → shorter)
 - **Distance from origin** maps to octave
-- Timing is the raw Lorenz event time (no grid) unless you raise **timing influence**
+- Timing is the raw simulation time (no grid) unless you raise **timing influence**
 
-Standard chaotic parameters are the defaults: `σ = 10`, `ρ = 28`, `β = 8/3`. Initial condition `(0.1, 0, 0)` is the seed. The same seed always replays the same sequence. **Perturb seed** adds `1e-6` to `x₀` so you can hear sensitive dependence.
+Each system starts with its standard chaotic parameters and a calibrated view/musical range. The same system, parameters, and seed always replay the same sequence. **Perturb seed** adds `1e-6` to `x₀` so you can hear sensitive dependence.
 
 ## Lobes
 
@@ -85,7 +85,7 @@ All voices share one attractor and remain deterministic with randomness off.
 
 ## Rhythm
 
-Leave quantization off to keep the irregular Lorenz timing. Enable it and raise **timing influence** from 0 (fully chaotic) toward 1 (fully on a 1/4, 1/8, 1/16, or triplet grid).
+Leave quantization off to keep the irregular chaotic timing. Enable it and raise **timing influence** from 0 (fully chaotic) toward 1 (fully on a 1/4, 1/8, 1/16, or triplet grid).
 
 ## Density
 
