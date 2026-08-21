@@ -103,17 +103,32 @@ export class Visualizer {
 
   _mapPoint(p, w, h) {
     const pad = 28 * this.dpr;
-    let u, v;
+    const usableW = w - pad * 2;
+    const usableH = h - pad * 2;
+    let dataX;
+    let dataY;
+    let rangeW;
+    let rangeH;
     if (this.projection === "xz") {
-      u = (p.x + 25) / 50;
-      v = 1 - p.z / 52;
+      dataX = p.x + 25;
+      dataY = 52 - p.z;
+      rangeW = 50;
+      rangeH = 52;
     } else {
-      u = (p.x + 25) / 50;
-      v = 1 - (p.y + 32) / 64;
+      dataX = p.x + 25;
+      dataY = 32 - p.y;
+      rangeW = 50;
+      rangeH = 64;
     }
+    // Uniform scale so tall/narrow canvases (phones) don't stretch the attractor.
+    const scale = Math.min(usableW / rangeW, usableH / rangeH);
+    const drawnW = rangeW * scale;
+    const drawnH = rangeH * scale;
+    const ox = pad + (usableW - drawnW) / 2;
+    const oy = pad + (usableH - drawnH) / 2;
     return {
-      x: pad + u * (w - pad * 2),
-      y: pad + v * (h - pad * 2),
+      x: ox + dataX * scale,
+      y: oy + dataY * scale,
     };
   }
 

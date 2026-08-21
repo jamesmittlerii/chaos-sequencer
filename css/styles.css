@@ -32,8 +32,8 @@ button, input, select { font-family: inherit; color: inherit; }
 
 .app {
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  min-height: 100vh;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 100dvh;
   max-width: 1440px;
   margin: 0 auto;
 }
@@ -131,16 +131,34 @@ canvas {
 
 .hud {
   display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: clamp(6px, 1.8vw, 14px);
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: clamp(9.5px, 2.55vw, 11px);
   color: var(--muted);
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  min-height: 1.35em;
+  line-height: 1.35;
 }
 
-.hud b { color: var(--text); font-weight: 500; }
+.hud::-webkit-scrollbar { display: none; }
+
+.hud > span { flex: 0 0 auto; }
+
+.hud b {
+  color: var(--text);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
 .hud .a { color: var(--teal); }
 .hud .b { color: var(--ember); }
+
+.hud .lbl-full { display: inline; }
+.hud .lbl-short { display: none; }
 
 .note-readout {
   font-family: var(--mono);
@@ -260,7 +278,78 @@ input[type="number"], select {
 .v3 { background: var(--pink); }
 
 @media (max-width: 960px) {
-  .stage { grid-template-columns: 1fr; }
-  .controls { max-height: none; }
-  .viz { min-height: 520px; }
+  .app {
+    grid-template-rows: auto auto auto;
+    min-height: unset;
+  }
+
+  header {
+    padding: 12px 14px 10px;
+    align-items: flex-start;
+  }
+
+  .transport {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .stage {
+    grid-template-columns: 1fr;
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .controls {
+    max-height: none;
+  }
+
+  .viz {
+    grid-template-rows: auto auto 110px;
+    min-height: 0;
+  }
+
+  #attractor {
+    width: 100%;
+    height: auto;
+    max-height: min(72vw, 420px);
+    aspect-ratio: 1 / 1;
+  }
+
+  #timeline {
+    height: 110px;
+  }
+
+  .hud .lbl-full { display: none; }
+  .hud .lbl-short { display: inline; }
+
+  .debug {
+    padding: 8px 14px 16px;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .field.span2 {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 480px) {
+  html, body {
+    font-size: 13px;
+  }
+
+  .brand h1 {
+    font-size: 16px;
+    letter-spacing: 0.14em;
+  }
+
+  button {
+    padding: 8px 10px;
+  }
+
+  #attractor {
+    max-height: min(88vw, 360px);
+  }
 }
