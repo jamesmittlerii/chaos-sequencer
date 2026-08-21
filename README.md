@@ -16,6 +16,8 @@ Then open [http://localhost:8080](http://localhost:8080). Click **Play**. Space 
 
 Live site: [https://jamesmittlerii.github.io/chaos-sequencer/](https://jamesmittlerii.github.io/chaos-sequencer/)
 
+**Walkthrough:** [TUTORIAL.md](TUTORIAL.md) — first listen, mapping, lobes, voices, quantization, presets, and how to read the diagnostic log.
+
 ```bash
 npm test    # pipeline determinism / RK4 bounds / preset encoding
 ```
