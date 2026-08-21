@@ -5,7 +5,7 @@
  */
 
 function hypot3(x, y, z) {
-  return Math.sqrt(x * x + y * y + z * z);
+  return Math.hypot(x, y, z);
 }
 
 function lerp(a, b, f) {

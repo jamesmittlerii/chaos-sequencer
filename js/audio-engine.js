@@ -4,14 +4,12 @@ import { SynthVoice } from "./synth-voice.js";
  * AudioEngine — owns the AudioContext, master bus, and synth voices.
  */
 export class AudioEngine {
-  constructor() {
-    this.ctx = null;
-    this.master = null;
-    this.compressor = null;
-    this.voices = new Map();
-    this.voiceConfigs = new Map();
-    this.started = false;
-  }
+  ctx = null;
+  master = null;
+  compressor = null;
+  voices = new Map();
+  voiceConfigs = new Map();
+  started = false;
 
   async resume() {
     if (!this.ctx) this._build();

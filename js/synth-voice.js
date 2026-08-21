@@ -143,7 +143,16 @@ export class SynthVoice {
     const length = this.ctx.sampleRate * 1;
     const buffer = this.ctx.createBuffer(1, length, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
-    for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
+    const randomValues = new Uint32Array(length);
+    const maxValuesPerCall = 16384; // Web Crypto limits each request to 65,536 bytes.
+    for (let offset = 0; offset < length; offset += maxValuesPerCall) {
+      globalThis.crypto.getRandomValues(
+        randomValues.subarray(offset, Math.min(offset + maxValuesPerCall, length)),
+      );
+    }
+    for (let i = 0; i < length; i++) {
+      data[i] = (randomValues[i] / 2 ** 32) * 2 - 1;
+    }
     this._noise = buffer;
     return buffer;
   }

@@ -381,7 +381,7 @@ function refreshRangeOutputs() {
     const out = $(id + "Out");
     if (!input || !out) continue;
     const n = Number(input.value);
-    out.textContent = Number.isInteger(n) && input.step === "1" ? String(n) : n.toFixed(digits);
+    out.textContent = Number.isInteger(n) && input.step === "1" ? String(n) : n.toFixed(+digits);
   }
 }
 
@@ -606,19 +606,24 @@ function frame() {
 applyAll();
 resetSim(true);
 refreshLocalSelect();
-fetchCatalogIndex()
-  .then((items) => {
-    catalog = items;
-    const select = $("catalogSelect");
-    for (const item of items) {
-      const opt = document.createElement("option");
-      opt.value = item.id;
-      opt.textContent = item.name || item.id;
-      select.appendChild(opt);
-    }
-    const parsed = parseLocation();
-    if (parsed.type === "named") select.value = parsed.name;
-  })
-  .catch(() => {});
-loadFromLocation();
+const catalogLoad = fetchCatalogIndex();
+const locationLoad = loadFromLocation();
 requestAnimationFrame(frame);
+
+try {
+  const items = await catalogLoad;
+  catalog = items;
+  const select = $("catalogSelect");
+  for (const item of items) {
+    const opt = document.createElement("option");
+    opt.value = item.id;
+    opt.textContent = item.name || item.id;
+    select.appendChild(opt);
+  }
+  const parsed = parseLocation();
+  if (parsed.type === "named") select.value = parsed.name;
+} catch {
+  // The app remains usable without the optional preset catalog.
+}
+
+await locationLoad;

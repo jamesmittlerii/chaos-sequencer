@@ -68,22 +68,31 @@ export class ChaosEngine {
       guard++;
       const state = this.lorenz.step();
       if (this.onPoint) this.onPoint(state);
-
-      const chaosEvents = this.analyzer.push(state);
-      for (const chaos of chaosEvents) {
-        const candidates = this.generator.generate(chaos);
-        for (const candidate of candidates) {
-          const mapper = this.mappers.get(candidate.voiceId) ?? this.mappers.values().next().value;
-          const mapped = mapper.map(chaos);
-          const note = this._enrich(candidate, mapped, chaos);
-          const when = this.sequencer.schedule(chaos.timestamp);
-          if (when < this.audio.currentTime - 0.02) continue;
-          if (!this.sequencer.claimSlot(note.voiceId, when)) continue;
-          this.audio.play(note, Math.max(when, this.audio.currentTime + 0.005));
-          if (this.onNote) this.onNote(note, when);
-        }
-      }
+      this._processChaosEvents(this.analyzer.push(state));
     }
+  }
+
+  _processChaosEvents(chaosEvents) {
+    for (const chaos of chaosEvents) {
+      this._processCandidates(this.generator.generate(chaos), chaos);
+    }
+  }
+
+  _processCandidates(candidates, chaos) {
+    for (const candidate of candidates) {
+      const mapper = this.mappers.get(candidate.voiceId) ?? this.mappers.values().next().value;
+      const note = this._enrich(candidate, mapper.map(chaos), chaos);
+      this._scheduleNote(note, chaos.timestamp);
+    }
+  }
+
+  _scheduleNote(note, timestamp) {
+    const when = this.sequencer.schedule(timestamp);
+    if (when < this.audio.currentTime - 0.02) return;
+    if (!this.sequencer.claimSlot(note.voiceId, when)) return;
+
+    this.audio.play(note, Math.max(when, this.audio.currentTime + 0.005));
+    if (this.onNote) this.onNote(note, when);
   }
 
   _enrich(candidate, mapped, chaos) {

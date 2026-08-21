@@ -82,7 +82,7 @@ export class EventGenerator {
 
     switch (voice.densityMode) {
       case "nth":
-        return n % Math.max(1, voice.nth | 0) === 0;
+        return n % Math.max(1, Math.trunc(voice.nth)) === 0;
       case "probability": {
         const rng = this.rngs.get(voice.id);
         return rng() < clamp01(voice.probability);

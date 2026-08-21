@@ -49,19 +49,19 @@
           <summary>Presets</summary>
           <div class="row">
             <div class="field span2">
-              <span class="lbl">library (shareable short links)</span>
+              <label class="lbl" for="catalogSelect">library (shareable short links)</label>
               <select id="catalogSelect">
                 <option value="">Choose a library preset…</option>
               </select>
             </div>
             <div class="field span2">
-              <span class="lbl">saved on this browser</span>
+              <label class="lbl" for="localSelect">saved on this browser</label>
               <select id="localSelect">
                 <option value="">No local presets yet</option>
               </select>
             </div>
             <div class="field span2">
-              <span class="lbl">name</span>
+              <label class="lbl" for="presetName">name</label>
               <input type="text" id="presetName" placeholder="e.g. night pad" maxlength="64" autocomplete="off" />
             </div>
             <div class="field span2 preset-actions">
@@ -70,6 +70,7 @@
               <button type="button" id="deletePresetBtn">Delete</button>
               <button type="button" id="exportPresetBtn">Export JSON</button>
               <button type="button" id="importPresetBtn">Import JSON</button>
+              <label for="importPresetFile" hidden>Import preset JSON file</label>
               <input type="file" id="importPresetFile" accept="application/json,.json" hidden />
             </div>
             <p class="preset-status span2" id="presetStatus">Links encode the full setup, so anyone can open the same sequence.</p>
@@ -80,47 +81,47 @@
           <summary>Lorenz attractor</summary>
           <div class="row">
             <div class="field">
-              <span class="lbl">σ sigma</span>
+              <label class="lbl" for="sigma">σ sigma</label>
               <input type="range" id="sigma" min="1" max="20" step="0.1" value="10" />
               <output id="sigmaOut">10</output>
             </div>
             <div class="field">
-              <span class="lbl">ρ rho</span>
+              <label class="lbl" for="rho">ρ rho</label>
               <input type="range" id="rho" min="0.5" max="50" step="0.1" value="28" />
               <output id="rhoOut">28</output>
             </div>
             <div class="field">
-              <span class="lbl">β beta</span>
+              <label class="lbl" for="beta">β beta</label>
               <input type="range" id="beta" min="0.2" max="8" step="0.01" value="2.6667" />
               <output id="betaOut">2.67</output>
             </div>
             <div class="field">
-              <span class="lbl">dt</span>
+              <label class="lbl" for="dt">dt</label>
               <input type="range" id="dt" min="0.002" max="0.03" step="0.001" value="0.01" />
               <output id="dtOut">0.010</output>
             </div>
             <div class="field">
-              <span class="lbl">simulation speed</span>
+              <label class="lbl" for="speed">simulation speed</label>
               <input type="range" id="speed" min="0.2" max="6" step="0.05" value="2.6" />
               <output id="speedOut">2.60</output>
             </div>
             <div class="field">
-              <span class="lbl">projection</span>
+              <label class="lbl" for="projection">projection</label>
               <select id="projection">
                 <option value="xy">X / Y</option>
                 <option value="xz">X / Z (butterfly)</option>
               </select>
             </div>
             <div class="field">
-              <span class="lbl">x₀ seed</span>
+              <label class="lbl" for="x0">x₀ seed</label>
               <input type="number" id="x0" step="0.000001" value="0.1" />
             </div>
             <div class="field">
-              <span class="lbl">y₀ seed</span>
+              <label class="lbl" for="y0">y₀ seed</label>
               <input type="number" id="y0" step="0.000001" value="0" />
             </div>
             <div class="field">
-              <span class="lbl">z₀ seed</span>
+              <label class="lbl" for="z0">z₀ seed</label>
               <input type="number" id="z0" step="0.000001" value="0" />
             </div>
           </div>
@@ -130,11 +131,11 @@
           <summary>Harmony</summary>
           <div class="row">
             <div class="field">
-              <span class="lbl">root</span>
+              <label class="lbl" for="root">root</label>
               <select id="root"></select>
             </div>
             <div class="field">
-              <span class="lbl">scale</span>
+              <label class="lbl" for="scale">scale</label>
               <select id="scale"></select>
             </div>
           </div>
@@ -144,65 +145,65 @@
           <summary>Lobes (musical states)</summary>
           <div class="row">
             <div class="field">
-              <span class="lbl">A octave</span>
+              <label class="lbl" for="lobeAOctave">A octave</label>
               <input type="range" id="lobeAOctave" min="-2" max="2" step="1" value="0" />
               <output id="lobeAOctaveOut">0</output>
             </div>
             <div class="field">
-              <span class="lbl">B octave</span>
+              <label class="lbl" for="lobeBOctave">B octave</label>
               <input type="range" id="lobeBOctave" min="-2" max="2" step="1" value="1" />
               <output id="lobeBOctaveOut">1</output>
             </div>
             <div class="field">
-              <span class="lbl">A velocity</span>
+              <label class="lbl" for="lobeAVel">A velocity</label>
               <input type="range" id="lobeAVel" min="0.2" max="2" step="0.05" value="0.85" />
               <output id="lobeAVelOut">0.85</output>
             </div>
             <div class="field">
-              <span class="lbl">B velocity</span>
+              <label class="lbl" for="lobeBVel">B velocity</label>
               <input type="range" id="lobeBVel" min="0.2" max="2" step="0.05" value="1.15" />
               <output id="lobeBVelOut">1.15</output>
             </div>
             <div class="field">
-              <span class="lbl">A duration</span>
+              <label class="lbl" for="lobeADur">A duration</label>
               <input type="range" id="lobeADur" min="0.3" max="2.5" step="0.05" value="1.2" />
               <output id="lobeADurOut">1.20</output>
             </div>
             <div class="field">
-              <span class="lbl">B duration</span>
+              <label class="lbl" for="lobeBDur">B duration</label>
               <input type="range" id="lobeBDur" min="0.3" max="2.5" step="0.05" value="0.8" />
               <output id="lobeBDurOut">0.80</output>
             </div>
             <div class="field">
-              <span class="lbl">A pan</span>
+              <label class="lbl" for="lobeAPan">A pan</label>
               <input type="range" id="lobeAPan" min="-1" max="1" step="0.05" value="-0.35" />
               <output id="lobeAPanOut">-0.35</output>
             </div>
             <div class="field">
-              <span class="lbl">B pan</span>
+              <label class="lbl" for="lobeBPan">B pan</label>
               <input type="range" id="lobeBPan" min="-1" max="1" step="0.05" value="0.35" />
               <output id="lobeBPanOut">0.35</output>
             </div>
             <div class="field">
-              <span class="lbl">A filter</span>
+              <label class="lbl" for="lobeAFilter">A filter</label>
               <input type="range" id="lobeAFilter" min="200" max="6000" step="10" value="900" />
               <output id="lobeAFilterOut">900</output>
             </div>
             <div class="field">
-              <span class="lbl">B filter</span>
+              <label class="lbl" for="lobeBFilter">B filter</label>
               <input type="range" id="lobeBFilter" min="200" max="6000" step="10" value="2400" />
               <output id="lobeBFilterOut">2400</output>
             </div>
             <div class="field">
-              <span class="lbl">A scale override</span>
+              <label class="lbl" for="lobeAScale">A scale override</label>
               <select id="lobeAScale"></select>
             </div>
             <div class="field">
-              <span class="lbl">B scale override</span>
+              <label class="lbl" for="lobeBScale">B scale override</label>
               <select id="lobeBScale"></select>
             </div>
             <div class="field">
-              <span class="lbl">A degree weights</span>
+              <label class="lbl" for="lobeAWeights">A degree weights</label>
               <select id="lobeAWeights">
                 <option value="even">Even</option>
                 <option value="tonic" selected>Tonic-heavy</option>
@@ -210,7 +211,7 @@
               </select>
             </div>
             <div class="field">
-              <span class="lbl">B degree weights</span>
+              <label class="lbl" for="lobeBWeights">B degree weights</label>
               <select id="lobeBWeights">
                 <option value="even" selected>Even</option>
                 <option value="tonic">Tonic-heavy</option>
@@ -229,7 +230,7 @@
               </span>
             </div>
             <div class="field">
-              <span class="lbl">grid</span>
+              <label class="lbl" for="grid">grid</label>
               <select id="grid">
                 <option value="1/4">1/4</option>
                 <option value="1/8" selected>1/8</option>
@@ -238,12 +239,12 @@
               </select>
             </div>
             <div class="field">
-              <span class="lbl">BPM</span>
+              <label class="lbl" for="bpm">BPM</label>
               <input type="range" id="bpm" min="40" max="180" step="1" value="92" />
               <output id="bpmOut">92</output>
             </div>
             <div class="field span2">
-              <span class="lbl">timing influence (chaos → grid)</span>
+              <label class="lbl" for="timingInfluence">timing influence (chaos → grid)</label>
               <input type="range" id="timingInfluence" min="0" max="1" step="0.01" value="0" />
               <output id="timingInfluenceOut">0.00</output>
             </div>
@@ -254,7 +255,7 @@
           <summary>Density</summary>
           <div class="row">
             <div class="field">
-              <span class="lbl">mode</span>
+              <label class="lbl" for="densityMode">mode</label>
               <select id="densityMode">
                 <option value="all">Every event</option>
                 <option value="nth">Every Nth</option>
@@ -264,22 +265,22 @@
               </select>
             </div>
             <div class="field">
-              <span class="lbl">N</span>
+              <label class="lbl" for="nth">N</label>
               <input type="range" id="nth" min="1" max="8" step="1" value="1" />
               <output id="nthOut">1</output>
             </div>
             <div class="field">
-              <span class="lbl">probability</span>
+              <label class="lbl" for="probability">probability</label>
               <input type="range" id="probability" min="0" max="1" step="0.01" value="1" />
               <output id="probabilityOut">1.00</output>
             </div>
             <div class="field">
-              <span class="lbl">velocity min</span>
+              <label class="lbl" for="velocityThreshold">velocity min</label>
               <input type="range" id="velocityThreshold" min="0" max="80" step="0.5" value="0" />
               <output id="velocityThresholdOut">0</output>
             </div>
             <div class="field">
-              <span class="lbl">custom metric</span>
+              <label class="lbl" for="customMetric">custom metric</label>
               <select id="customMetric">
                 <option value="distance">distance</option>
                 <option value="velocity">velocity</option>
@@ -288,12 +289,12 @@
               </select>
             </div>
             <div class="field">
-              <span class="lbl">custom min</span>
+              <label class="lbl" for="customThreshold">custom min</label>
               <input type="range" id="customThreshold" min="0" max="50" step="0.5" value="0" />
               <output id="customThresholdOut">0</output>
             </div>
             <div class="field">
-              <span class="lbl">Z threshold (voice 3)</span>
+              <label class="lbl" for="zThreshold">Z threshold (voice 3)</label>
               <input type="range" id="zThreshold" min="10" max="45" step="0.5" value="25" />
               <output id="zThresholdOut">25</output>
             </div>
@@ -307,7 +308,7 @@
               <label><input type="checkbox" id="voice1Enable" checked /><span class="voice-dot v1"></span>Voice 1 · X crossings</label>
             </div>
             <div class="field">
-              <span class="lbl">voice 1 waveform</span>
+              <label class="lbl" for="voice1Wave">voice 1 waveform</label>
               <select id="voice1Wave">
                 <option>sine</option>
                 <option selected>triangle</option>
@@ -320,7 +321,7 @@
               <label><input type="checkbox" id="voice2Enable" /><span class="voice-dot v2"></span>Voice 2 · Y extrema</label>
             </div>
             <div class="field">
-              <span class="lbl">voice 2 waveform</span>
+              <label class="lbl" for="voice2Wave">voice 2 waveform</label>
               <select id="voice2Wave">
                 <option>sine</option>
                 <option>triangle</option>
@@ -333,7 +334,7 @@
               <label><input type="checkbox" id="voice3Enable" /><span class="voice-dot v3"></span>Voice 3 · Z threshold</label>
             </div>
             <div class="field">
-              <span class="lbl">voice 3 waveform</span>
+              <label class="lbl" for="voice3Wave">voice 3 waveform</label>
               <select id="voice3Wave">
                 <option>sine</option>
                 <option>triangle</option>
@@ -349,37 +350,37 @@
           <summary>Synth</summary>
           <div class="row">
             <div class="field">
-              <span class="lbl">attack</span>
+              <label class="lbl" for="attack">attack</label>
               <input type="range" id="attack" min="0.001" max="0.4" step="0.001" value="0.012" />
               <output id="attackOut">0.012</output>
             </div>
             <div class="field">
-              <span class="lbl">decay</span>
+              <label class="lbl" for="decay">decay</label>
               <input type="range" id="decay" min="0.01" max="0.8" step="0.01" value="0.14" />
               <output id="decayOut">0.14</output>
             </div>
             <div class="field">
-              <span class="lbl">sustain</span>
+              <label class="lbl" for="sustain">sustain</label>
               <input type="range" id="sustain" min="0.05" max="1" step="0.01" value="0.5" />
               <output id="sustainOut">0.50</output>
             </div>
             <div class="field">
-              <span class="lbl">release</span>
+              <label class="lbl" for="release">release</label>
               <input type="range" id="release" min="0.02" max="1.2" step="0.01" value="0.22" />
               <output id="releaseOut">0.22</output>
             </div>
             <div class="field">
-              <span class="lbl">cutoff</span>
+              <label class="lbl" for="cutoff">cutoff</label>
               <input type="range" id="cutoff" min="120" max="8000" step="10" value="1600" />
               <output id="cutoffOut">1600</output>
             </div>
             <div class="field">
-              <span class="lbl">resonance</span>
+              <label class="lbl" for="resonance">resonance</label>
               <input type="range" id="resonance" min="0.1" max="18" step="0.1" value="1.2" />
               <output id="resonanceOut">1.2</output>
             </div>
             <div class="field">
-              <span class="lbl">master</span>
+              <label class="lbl" for="master">master</label>
               <input type="range" id="master" min="0" max="1" step="0.01" value="0.7" />
               <output id="masterOut">0.70</output>
             </div>
@@ -390,17 +391,17 @@
           <summary>Modulation</summary>
           <div class="row">
             <div class="field">
-              <span class="lbl">filter from Z</span>
+              <label class="lbl" for="modulateFilter">filter from Z</label>
               <input type="range" id="modulateFilter" min="0" max="1" step="0.01" value="0" />
               <output id="modulateFilterOut">0.00</output>
             </div>
             <div class="field">
-              <span class="lbl">pan from X</span>
+              <label class="lbl" for="modulatePan">pan from X</label>
               <input type="range" id="modulatePan" min="0" max="1" step="0.01" value="0" />
               <output id="modulatePanOut">0.00</output>
             </div>
             <div class="field">
-              <span class="lbl">FM from velocity</span>
+              <label class="lbl" for="modulateFm">FM from velocity</label>
               <input type="range" id="modulateFm" min="0" max="1" step="0.01" value="0" />
               <output id="modulateFmOut">0.00</output>
             </div>
