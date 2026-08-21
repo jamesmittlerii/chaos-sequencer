@@ -1,9 +1,10 @@
-import { LorenzAttractor } from "./lorenz.js";
+import { ATTRACTOR_SYSTEMS, ChaoticAttractor } from "./attractors.js";
 import { ChaosAnalyzer } from "./chaos-analyzer.js";
 import { EventGenerator } from "./event-generator.js";
 import { MusicalMapper, NOTE_NAMES, SCALE_LABELS, SCALES } from "./musical-mapper.js";
 import { Sequencer } from "./sequencer.js";
 import { AudioEngine } from "./audio-engine.js";
+import { MidiEngine } from "./midi-engine.js";
 import { ChaosEngine } from "./engine.js";
 import { Visualizer } from "./visualizer.js";
 import { hashSeed } from "./rng.js";
@@ -15,6 +16,7 @@ import {
   fetchCatalogIndex,
   fetchCatalogPreset,
   listLocalPresets,
+  normalizePreset,
   parseLocation,
   saveLocalPreset,
   shareUrl,
@@ -22,6 +24,10 @@ import {
 } from "./presets.js";
 
 const $ = (id) => document.getElementById(id);
+
+if (["localhost", "127.0.0.1", "::1"].includes(window.location.hostname)) {
+  $("buildStamp").textContent = "[local]";
+}
 
 function fillSelect(el, entries, selected) {
   el.innerHTML = "";
@@ -59,10 +65,7 @@ function num(id) {
 }
 
 const ranges = [
-  ["sigma", 2],
-  ["rho", 2],
-  ["beta", 2],
-  ["dt", 3],
+  ["dt", 4],
   ["speed", 2],
   ["lobeAOctave", 0],
   ["lobeBOctave", 0],
@@ -103,10 +106,16 @@ fillSelect(
 fillSelect($("scale"), Object.entries(SCALE_LABELS), "pentatonic-minor");
 fillSelect($("lobeAScale"), [["", "inherit"], ...Object.entries(SCALE_LABELS)], "");
 fillSelect($("lobeBScale"), [["", "inherit"], ...Object.entries(SCALE_LABELS)], "");
+fillSelect(
+  $("systemId"),
+  Object.values(ATTRACTOR_SYSTEMS).map(({ id, label }) => [id, label]),
+  "lorenz",
+);
 
-const lorenz = new LorenzAttractor();
+const attractor = new ChaoticAttractor();
 const analyzer = new ChaosAnalyzer();
 const audio = new AudioEngine();
+const midi = new MidiEngine({ onChange: refreshMidiOutputs });
 const sequencer = new Sequencer();
 const visualizer = new Visualizer({
   attractor: $("attractor"),
@@ -120,6 +129,68 @@ const mappers = new Map([
 ]);
 
 const generator = new EventGenerator([], 1);
+
+function renderAttractorParameters(systemId, values = {}) {
+  const definition = ATTRACTOR_SYSTEMS[systemId] ?? ATTRACTOR_SYSTEMS.lorenz;
+  const container = $("attractorParams");
+  container.innerHTML = "";
+  for (const [key, spec] of Object.entries(definition.params)) {
+    const field = document.createElement("div");
+    field.className = "field";
+
+    const label = document.createElement("label");
+    label.className = "lbl";
+    label.htmlFor = `systemParam-${key}`;
+    label.textContent = spec.label;
+
+    const input = document.createElement("input");
+    input.type = "range";
+    input.id = `systemParam-${key}`;
+    input.dataset.attractorParam = key;
+    input.min = String(spec.min);
+    input.max = String(spec.max);
+    input.step = String(spec.step);
+    input.value = String(values[key] ?? spec.value);
+
+    const output = document.createElement("output");
+    output.id = `${input.id}Out`;
+
+    field.append(label, input, output);
+    container.appendChild(field);
+    bindRange(input.id, spec.digits);
+  }
+}
+
+function resetSystemControls(systemId) {
+  const definition = ATTRACTOR_SYSTEMS[systemId] ?? ATTRACTOR_SYSTEMS.lorenz;
+  renderAttractorParameters(definition.id);
+  configureSystemRanges(definition);
+  $("dt").value = String(definition.dt);
+  $("x0").value = String(definition.initial.x);
+  $("y0").value = String(definition.initial.y);
+  $("z0").value = String(definition.initial.z);
+  $("zThreshold").value = String(definition.zThreshold);
+  refreshRangeOutputs();
+}
+
+function configureSystemRanges(definition) {
+  const [zLo, zHi] = definition.viewBounds.z;
+  const threshold = $("zThreshold");
+  threshold.min = String(zLo);
+  threshold.max = String(zHi);
+  threshold.step = String(Math.max(0.01, (zHi - zLo) / 200));
+}
+
+function attractorParamsFromUI() {
+  return Object.fromEntries(
+    [...document.querySelectorAll("[data-attractor-param]")].map((input) => [
+      input.dataset.attractorParam,
+      Number(input.value),
+    ]),
+  );
+}
+
+renderAttractorParameters("lorenz");
 
 const debugRows = [];
 let noteCount = 0;
@@ -170,23 +241,26 @@ function voicesFromUI() {
   ];
 }
 
-function applyLorenzFromUI() {
-  lorenz.setParams({
-    sigma: num("sigma"),
-    rho: num("rho"),
-    beta: num("beta"),
+function applyAttractorFromUI() {
+  const systemId = $("systemId").value;
+  const config = {
+    ...attractorParamsFromUI(),
     dt: num("dt"),
     x: num("x0"),
     y: num("y0"),
     z: num("z0"),
-  });
+  };
+  if (attractor.systemId !== systemId) attractor.setSystem(systemId, config);
+  else attractor.setParams(config);
 }
 
 function applyMappingFromUI() {
   const scaleName = $("scale").value;
+  const system = ATTRACTOR_SYSTEMS[$("systemId").value] ?? ATTRACTOR_SYSTEMS.lorenz;
   const shared = {
     rootName: $("root").value,
     scaleName,
+    bounds: system.bounds,
     lobeA: {
       octaveOffset: num("lobeAOctave"),
       velocityScale: num("lobeAVel"),
@@ -228,9 +302,21 @@ function applyAudioFromUI() {
   audio.setMasterGain(num("master"));
 }
 
+function applyMidiFromUI() {
+  engine.internalAudioEnabled = $("internalAudio").checked;
+  midi.setConfig({
+    enabled: $("midiEnable").checked,
+    channels: {
+      "voice-1": num("midiChannel1"),
+      "voice-2": num("midiChannel2"),
+      "voice-3": num("midiChannel3"),
+    },
+  });
+}
+
 function applyAll() {
   if (hydrating) return;
-  applyLorenzFromUI();
+  applyAttractorFromUI();
   applyMappingFromUI();
   analyzer.setZThreshold(num("zThreshold"));
   sequencer.setConfig({
@@ -246,9 +332,12 @@ function applyAll() {
   engine.modulateFilter = num("modulateFilter");
   engine.modulatePan = num("modulatePan");
   engine.modulateFm = num("modulateFm");
+  engine.bounds = (ATTRACTOR_SYSTEMS[$("systemId").value] ?? ATTRACTOR_SYSTEMS.lorenz).bounds;
   visualizer.projection = $("projection").value;
+  visualizer.setSystem(ATTRACTOR_SYSTEMS[$("systemId").value] ?? ATTRACTOR_SYSTEMS.lorenz);
   $("debugPanel").classList.toggle("hidden", !$("diagnostics").checked);
   applyAudioFromUI();
+  applyMidiFromUI();
 }
 
 function pushDebug(note) {
@@ -276,12 +365,13 @@ function pushDebug(note) {
 }
 
 const engine = new ChaosEngine({
-  lorenz,
+  attractor,
   analyzer,
   generator,
   mappers,
   sequencer,
   audio,
+  midi,
   onPoint(state) {
     visualizer.addPoint(state);
   },
@@ -299,7 +389,7 @@ const engine = new ChaosEngine({
 
 function resetSim(clearLog = true) {
   applyAll();
-  lorenz.reset({ x: num("x0"), y: num("y0"), z: num("z0") });
+  attractor.reset({ x: num("x0"), y: num("y0"), z: num("z0") });
   analyzer.reset();
   generator.reset();
   visualizer.reset();
@@ -315,6 +405,7 @@ function resetSim(clearLog = true) {
 
 async function play() {
   applyAll();
+  if (midi.enabled && !midi.access) await connectMidi();
   await audio.resume();
   applyAudioFromUI();
   if (paused && playing) {
@@ -355,6 +446,55 @@ function perturb() {
 
 function setPresetStatus(message) {
   $("presetStatus").textContent = message;
+}
+
+function setMidiStatus(message) {
+  $("midiStatus").textContent = message;
+}
+
+function refreshMidiOutputs() {
+  const select = $("midiOutput");
+  const selected = midi.output?.id ?? select.value;
+  const outputs = midi.outputs();
+  select.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = outputs.length ? "Choose a MIDI destination…" : "No MIDI outputs found";
+  select.appendChild(placeholder);
+
+  for (const output of outputs) {
+    const option = document.createElement("option");
+    option.value = output.id;
+    const manufacturer = output.manufacturer ? ` — ${output.manufacturer}` : "";
+    option.textContent = `${output.name}${manufacturer}`;
+    select.appendChild(option);
+  }
+
+  select.disabled = !midi.access || outputs.length === 0;
+  if (outputs.some((output) => output.id === selected)) {
+    select.value = selected;
+    midi.setOutput(selected);
+  }
+}
+
+async function connectMidi() {
+  setMidiStatus("Requesting MIDI access…");
+  try {
+    const outputs = await midi.connect();
+    refreshMidiOutputs();
+    if (!outputs.length) {
+      setMidiStatus("MIDI access granted, but no outputs were found.");
+      return;
+    }
+    if (!midi.output) {
+      $("midiOutput").value = outputs[0].id;
+      midi.setOutput(outputs[0].id);
+    }
+    setMidiStatus(`Connected to ${midi.output.name}.`);
+  } catch (err) {
+    setMidiStatus(err.message || "Could not access MIDI devices.");
+  }
 }
 
 function refreshLocalSelect(selected = "") {
@@ -410,12 +550,18 @@ async function copyShareLink() {
 }
 
 function adoptPreset(preset, { writeUrl = true, status } = {}) {
+  const normalized = normalizePreset(preset);
   hydrating = true;
-  applyPresetToDom(preset);
+  const systemId = normalized.params.systemId;
+  normalized.params.systemId = ATTRACTOR_SYSTEMS[systemId] ? systemId : "lorenz";
+  $("systemId").value = normalized.params.systemId;
+  configureSystemRanges(ATTRACTOR_SYSTEMS[$("systemId").value]);
+  renderAttractorParameters($("systemId").value, normalized.params.attractorParams);
+  applyPresetToDom(normalized);
   refreshRangeOutputs();
-  if (preset.name) $("presetName").value = preset.name;
+  if (normalized.name) $("presetName").value = normalized.name;
   hydrating = false;
-  if (writeUrl) writeShareHash(capturePreset(preset.name || $("presetName").value.trim()));
+  if (writeUrl) writeShareHash(capturePreset(normalized.name || $("presetName").value.trim()));
   if (playing) {
     engine.stop();
     resetSim(true);
@@ -462,18 +608,25 @@ $("pauseBtn").addEventListener("click", pause);
 $("resetBtn").addEventListener("click", reset);
 $("perturbBtn").addEventListener("click", perturb);
 $("copyLinkBtn").addEventListener("click", copyShareLink);
-
-document.querySelectorAll("input, select").forEach((el) => {
-  if (el.closest("[data-preset-ui]")) return;
-  el.addEventListener("input", () => {
-    applyAll();
-    scheduleUrlSync();
-  });
-  el.addEventListener("change", () => {
-    applyAll();
-    scheduleUrlSync();
-  });
+$("midiConnectBtn").addEventListener("click", connectMidi);
+$("midiOutput").addEventListener("change", () => {
+  midi.setOutput($("midiOutput").value);
+  setMidiStatus(midi.output ? `Connected to ${midi.output.name}.` : "Choose a MIDI destination.");
 });
+$("systemId").addEventListener("change", () => {
+  resetSystemControls($("systemId").value);
+  reset();
+});
+
+function handleControlChange(event) {
+  const el = event.target;
+  if (!el.matches("input, select") || el.closest("[data-preset-ui]")) return;
+  applyAll();
+  scheduleUrlSync();
+}
+
+document.addEventListener("input", handleControlChange);
+document.addEventListener("change", handleControlChange);
 
 $("savePresetBtn").addEventListener("click", () => {
   try {
@@ -532,7 +685,7 @@ $("exportPresetBtn").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(preset, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `${(preset.name || "lorenz-preset").replace(/\s+/g, "-")}.json`;
+    a.download = `${(preset.name || "chaos-preset").replace(/\s+/g, "-")}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
   setPresetStatus("Downloaded JSON. You can also drop a file into the repo as presets/name.json for a short #preset=name link.");
@@ -546,7 +699,7 @@ $("importPresetFile").addEventListener("change", async () => {
   try {
     const preset = JSON.parse(await file.text());
     if (!preset || typeof preset !== "object" || !preset.params) {
-      throw new Error("That file is not a Lorenz preset.");
+      throw new Error("That file is not a chaos sequencer preset.");
     }
     adoptPreset(preset, { status: `Imported “${preset.name || file.name}”.` });
   } catch (err) {
@@ -579,19 +732,20 @@ function hudFrom(state) {
 
 function frame() {
   if (idle && !playing) {
-    for (let i = 0; i < 4; i++) visualizer.addPoint(lorenz.step());
-    visualizer.setPlayback(lorenz.t);
+    const previewSteps = Math.min(80, Math.ceil(0.04 / attractor.dt));
+    for (let i = 0; i < previewSteps; i++) visualizer.addPoint(attractor.step());
+    visualizer.setPlayback(attractor.t);
     visualizer.draw(0);
-    hudFrom(lorenz);
+    hudFrom(attractor);
   } else if (playing && audio.ctx) {
     const elapsed = Math.max(0, audio.currentTime - sequencer.audioStart);
-    const lorenzNow = elapsed * sequencer.speed;
-    visualizer.setPlayback(lorenzNow);
-    visualizer.draw(paused ? sequencer.audioStart + visualizer.playbackLorenzT / sequencer.speed : audio.currentTime);
+    const simulationNow = elapsed * sequencer.speed;
+    visualizer.setPlayback(simulationNow);
+    visualizer.draw(paused ? sequencer.audioStart + visualizer.playbackT / sequencer.speed : audio.currentTime);
     const pts = visualizer.points;
     let shown = pts[0];
     for (let i = pts.length - 1; i >= 0; i--) {
-      if (pts[i].t <= lorenzNow) {
+      if (pts[i].t <= simulationNow) {
         shown = pts[i];
         break;
       }

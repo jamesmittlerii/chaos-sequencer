@@ -1,10 +1,13 @@
 {
-  "v": 1,
+  "v": 2,
   "name": "Quantized grid",
   "params": {
-    "sigma": 10,
-    "rho": 28,
-    "beta": 2.6667,
+    "systemId": "lorenz",
+    "attractorParams": {
+      "sigma": 10,
+      "rho": 28,
+      "beta": 2.6667
+    },
     "dt": 0.01,
     "speed": 2.4,
     "projection": "xy",

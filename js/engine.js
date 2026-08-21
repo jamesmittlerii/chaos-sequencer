@@ -7,13 +7,14 @@ import { midiToFreq } from "./musical-mapper.js";
  * This is the only place the independent stages are composed.
  */
 export class ChaosEngine {
-  constructor({ lorenz, analyzer, generator, mappers, sequencer, audio, onNote, onPoint }) {
-    this.lorenz = lorenz;
+  constructor({ attractor, analyzer, generator, mappers, sequencer, audio, midi, onNote, onPoint }) {
+    this.attractor = attractor;
     this.analyzer = analyzer;
     this.generator = generator;
     this.mappers = mappers;
     this.sequencer = sequencer;
     this.audio = audio;
+    this.midi = midi;
     this.onNote = onNote;
     this.onPoint = onPoint;
     this.running = false;
@@ -23,11 +24,17 @@ export class ChaosEngine {
     this.modulateFilter = 0;
     this.modulatePan = 0;
     this.modulateFm = 0;
+    this.internalAudioEnabled = true;
+    this.bounds = {
+      x: [-20, 20],
+      z: [1, 48],
+      velocity: [8, 90],
+    };
   }
 
   start() {
     const t0 = this.audio.currentTime + 0.08;
-    this.lorenz.reset();
+    this.attractor.reset();
     this.analyzer.reset();
     this.generator.reset();
     this.sequencer.reset(t0);
@@ -42,6 +49,7 @@ export class ChaosEngine {
       clearInterval(this.timer);
       this.timer = null;
     }
+    this.midi?.stopAll();
   }
 
   resume() {
@@ -64,9 +72,9 @@ export class ChaosEngine {
     if (!this.running || !this.audio.ctx) return;
     const horizon = this.audio.currentTime + this.lookahead;
     let guard = 0;
-    while (this.sequencer.lorenzToAudio(this.lorenz.t) < horizon && guard < 4000) {
+    while (this.sequencer.simulationToAudio(this.attractor.t) < horizon && guard < 4000) {
       guard++;
-      const state = this.lorenz.step();
+      const state = this.attractor.step();
       if (this.onPoint) this.onPoint(state);
       this._processChaosEvents(this.analyzer.push(state));
     }
@@ -91,17 +99,19 @@ export class ChaosEngine {
     if (when < this.audio.currentTime - 0.02) return;
     if (!this.sequencer.claimSlot(note.voiceId, when)) return;
 
-    this.audio.play(note, Math.max(when, this.audio.currentTime + 0.005));
+    const scheduledWhen = Math.max(when, this.audio.currentTime + 0.005);
+    if (this.internalAudioEnabled) this.audio.play(note, scheduledWhen);
+    this.midi?.play(note, scheduledWhen, this.audio.currentTime);
     if (this.onNote) this.onNote(note, when);
   }
 
   _enrich(candidate, mapped, chaos) {
-    const xNorm = clamp((chaos.x + 20) / 40, 0, 1);
-    const zNorm = clamp((chaos.z - 1) / 47, 0, 1);
+    const xNorm = normalize(chaos.x, this.bounds.x);
+    const zNorm = normalize(chaos.z, this.bounds.z);
     const pan =
       clamp(mapped.pan + (xNorm * 2 - 1) * this.modulatePan, -1, 1);
     const filter = mapped.filter + zNorm * this.modulateFilter * 4200;
-    const fm = this.modulateFm * (chaos.velocity / 90);
+    const fm = this.modulateFm * normalize(chaos.velocity, this.bounds.velocity);
 
     return {
       ...mapped,
@@ -122,4 +132,9 @@ export class ChaosEngine {
 
 function clamp(v, lo, hi) {
   return Math.min(hi, Math.max(lo, v));
+}
+
+function normalize(value, [lo, hi]) {
+  if (lo === hi) return 0.5;
+  return clamp((value - lo) / (hi - lo), 0, 1);
 }

@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LORENZ — chaotic sequencer</title>
-  <meta name="lorenz-build" content="ff3fc20" />
+  <title>LORENZ AND FRIENDS — chaotic sequencer</title>
+  <meta name="lorenz-build" content="7-system" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=ff3fc20" />
+  <link rel="stylesheet" href="css/styles.css?v=7-system" />
 </head>
 <body>
   <div class="app">
     <header>
       <div class="brand">
-        <h1>Lorenz</h1>
-        <p>deterministic chaos as sequencer <span class="build-id" id="buildStamp" title="Git commit for this page">ff3fc20</span></p>
+        <h1>Lorenz and Friends</h1>
+        <p>deterministic chaos as sequencer <span class="build-id" id="buildStamp" title="Build for this page">7-system</span></p>
       </div>
       <div class="transport">
         <button class="primary" id="playBtn">Play</button>
@@ -78,27 +78,17 @@
         </details>
 
         <details class="panel" open>
-          <summary>Lorenz attractor</summary>
+          <summary>Chaotic system</summary>
           <div class="row">
-            <div class="field">
-              <label class="lbl" for="sigma">σ sigma</label>
-              <input type="range" id="sigma" min="1" max="20" step="0.1" value="10" />
-              <output id="sigmaOut">10</output>
+            <div class="field span2">
+              <label class="lbl" for="systemId">system</label>
+              <select id="systemId"></select>
             </div>
-            <div class="field">
-              <label class="lbl" for="rho">ρ rho</label>
-              <input type="range" id="rho" min="0.5" max="50" step="0.1" value="28" />
-              <output id="rhoOut">28</output>
-            </div>
-            <div class="field">
-              <label class="lbl" for="beta">β beta</label>
-              <input type="range" id="beta" min="0.2" max="8" step="0.01" value="2.6667" />
-              <output id="betaOut">2.67</output>
-            </div>
+            <div id="attractorParams" class="parameter-fields"></div>
             <div class="field">
               <label class="lbl" for="dt">dt</label>
-              <input type="range" id="dt" min="0.002" max="0.03" step="0.001" value="0.01" />
-              <output id="dtOut">0.010</output>
+              <input type="range" id="dt" min="0.0005" max="0.03" step="0.0005" value="0.01" />
+              <output id="dtOut">0.0100</output>
             </div>
             <div class="field">
               <label class="lbl" for="speed">simulation speed</label>
@@ -109,7 +99,7 @@
               <label class="lbl" for="projection">projection</label>
               <select id="projection">
                 <option value="xy">X / Y</option>
-                <option value="xz">X / Z (butterfly)</option>
+                <option value="xz">X / Z</option>
               </select>
             </div>
             <div class="field">
@@ -346,6 +336,38 @@
           </div>
         </details>
 
+        <details class="panel" open>
+          <summary>MIDI output</summary>
+          <div class="row">
+            <div class="field span2 checks">
+              <label><input type="checkbox" id="internalAudio" checked /> internal synth</label>
+              <label><input type="checkbox" id="midiEnable" /> send MIDI</label>
+            </div>
+            <div class="field span2">
+              <label class="lbl" for="midiOutput">destination</label>
+              <select id="midiOutput" disabled>
+                <option value="">Connect MIDI to choose an output…</option>
+              </select>
+            </div>
+            <div class="field span2">
+              <button type="button" id="midiConnectBtn">Connect / refresh MIDI</button>
+            </div>
+            <div class="field">
+              <label class="lbl" for="midiChannel1">Bass channel</label>
+              <input type="number" id="midiChannel1" min="1" max="16" step="1" value="1" />
+            </div>
+            <div class="field">
+              <label class="lbl" for="midiChannel2">Lead channel</label>
+              <input type="number" id="midiChannel2" min="1" max="16" step="1" value="2" />
+            </div>
+            <div class="field">
+              <label class="lbl" for="midiChannel3">Perc channel</label>
+              <input type="number" id="midiChannel3" min="1" max="16" step="1" value="10" />
+            </div>
+            <p class="preset-status span2" id="midiStatus">Connect a USB synth, MIDI interface, or macOS IAC bus.</p>
+          </div>
+        </details>
+
         <details class="panel">
           <summary>Synth</summary>
           <div class="row">
@@ -438,6 +460,6 @@
       </table>
     </section>
   </div>
-  <script type="module" src="js/app.js?v=ff3fc20"></script>
+  <script type="module" src="js/app.js?v=7-system"></script>
 </body>
 </html>
