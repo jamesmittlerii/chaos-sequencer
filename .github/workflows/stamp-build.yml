@@ -20,27 +20,34 @@ jobs:
           FULL_SHA: ${{ github.sha }}
         run: |
           python3 << 'PY'
-          import os, re
+          import os, re, sys
           from pathlib import Path
 
           sha = os.environ["FULL_SHA"][:7]
           html_path = Path("index.html")
           html = html_path.read_text()
+          original = html
+          # \g<1> is required: \171 would be parsed as octal 'y' when the SHA starts with 7.
           html = re.sub(
               r'(<meta name="lorenz-build" content=")[^"]+(")',
-              rf"\1{sha}\2",
+              rf"\g<1>{sha}\g<2>",
               html,
               count=1,
           )
-          html = re.sub(r"(\?v=)[A-Za-z0-9_-]+", rf"\1{sha}", html)
+          html = re.sub(r"(\?v=)[A-Za-z0-9_-]+", rf"\g<1>{sha}", html)
           html = re.sub(
               r'(id="buildStamp"[^>]*>)[^<]+',
-              rf"\1{sha}",
+              rf"\g<1>{sha}",
               html,
               count=1,
           )
-          html_path.write_text(html)
-          print(f"stamped {sha}")
+          if "<!DOCTYPE html>" not in html or 'rel="stylesheet"' not in html:
+              sys.exit("stamp produced invalid HTML")
+          if html == original:
+              print("already stamped")
+          else:
+              html_path.write_text(html)
+              print(f"stamped {sha}")
           PY
 
       - name: Commit stamp
