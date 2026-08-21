@@ -1,0 +1,6 @@
+{
+    "sonarlint.connectedMode.project": {
+        "connectionId": "cursor",
+        "projectKey": "jamesmittlerii_chaos-sequencer"
+    }
+}

@@ -96,16 +96,16 @@ export function encodeState(preset) {
   const json = JSON.stringify(preset);
   const bytes = new TextEncoder().encode(json);
   let bin = "";
-  for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  for (const b of bytes) bin += String.fromCodePoint(b);
+  return btoa(bin).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
 }
 
 export function decodeState(payload) {
   const pad = payload.length % 4 === 0 ? "" : "=".repeat(4 - (payload.length % 4));
-  const b64 = payload.replace(/-/g, "+").replace(/_/g, "/") + pad;
+  const b64 = payload.replaceAll("-", "+").replaceAll("_", "/") + pad;
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.codePointAt(i);
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 

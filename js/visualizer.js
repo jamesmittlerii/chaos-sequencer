@@ -79,7 +79,7 @@ export class Visualizer {
     const cut = this.playbackLorenzT;
     this.visiblePoints = this.points.filter((p) => p.t <= cut + 1e-9);
     this.visibleEvents = this.events.filter((e) => e.timestamp <= cut + 1e-9);
-    this.current = this.visiblePoints[this.visiblePoints.length - 1] ?? null;
+    this.current = this.visiblePoints.at(-1) ?? null;
     this._drawAttractor();
     this._drawTimeline(nowAudio);
   }
