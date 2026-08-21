@@ -7,6 +7,19 @@ import { AudioEngine } from "./audio-engine.js";
 import { ChaosEngine } from "./engine.js";
 import { Visualizer } from "./visualizer.js";
 import { hashSeed } from "./rng.js";
+import {
+  applyPresetToDom,
+  capturePreset,
+  catalogUrl,
+  deleteLocalPreset,
+  fetchCatalogIndex,
+  fetchCatalogPreset,
+  listLocalPresets,
+  parseLocation,
+  saveLocalPreset,
+  shareUrl,
+  writeShareHash,
+} from "./presets.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -113,6 +126,9 @@ let noteCount = 0;
 let playing = false;
 let paused = false;
 let idle = true;
+let hydrating = false;
+let urlSyncTimer = 0;
+let catalog = [];
 
 function voicesFromUI() {
   const density = {
@@ -213,6 +229,7 @@ function applyAudioFromUI() {
 }
 
 function applyAll() {
+  if (hydrating) return;
   applyLorenzFromUI();
   applyMappingFromUI();
   analyzer.setZThreshold(num("zThreshold"));
@@ -336,14 +353,209 @@ function perturb() {
   reset();
 }
 
+function setPresetStatus(message) {
+  $("presetStatus").textContent = message;
+}
+
+function refreshLocalSelect(selected = "") {
+  const all = listLocalPresets();
+  const names = Object.keys(all).sort((a, b) => a.localeCompare(b));
+  const select = $("localSelect");
+  select.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = names.length ? "Choose a saved preset…" : "No local presets yet";
+  select.appendChild(placeholder);
+  for (const name of names) {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    if (name === selected) opt.selected = true;
+    select.appendChild(opt);
+  }
+}
+
+function refreshRangeOutputs() {
+  for (const [id, digits] of ranges) {
+    const input = $(id);
+    const out = $(id + "Out");
+    if (!input || !out) continue;
+    const n = Number(input.value);
+    out.textContent = Number.isInteger(n) && input.step === "1" ? String(n) : n.toFixed(digits);
+  }
+}
+
+function currentShareUrl() {
+  return shareUrl(capturePreset($("presetName").value.trim()));
+}
+
+function scheduleUrlSync() {
+  if (hydrating) return;
+  clearTimeout(urlSyncTimer);
+  urlSyncTimer = setTimeout(() => {
+    writeShareHash(capturePreset($("presetName").value.trim()));
+  }, 200);
+}
+
+async function copyShareLink() {
+  const url = currentShareUrl();
+  writeShareHash(capturePreset($("presetName").value.trim()));
+  try {
+    await navigator.clipboard.writeText(url);
+    setPresetStatus("Share link copied. Anyone with it gets this exact setup.");
+  } catch {
+    window.prompt("Copy this share link:", url);
+    setPresetStatus("Copy the link from the prompt.");
+  }
+}
+
+function adoptPreset(preset, { writeUrl = true, status } = {}) {
+  hydrating = true;
+  applyPresetToDom(preset);
+  refreshRangeOutputs();
+  if (preset.name) $("presetName").value = preset.name;
+  hydrating = false;
+  if (writeUrl) writeShareHash(capturePreset(preset.name || $("presetName").value.trim()));
+  if (playing) {
+    engine.stop();
+    resetSim(true);
+    playing = true;
+    paused = false;
+    idle = false;
+    engine.start();
+  } else {
+    resetSim(true);
+  }
+  if (status) setPresetStatus(status);
+}
+
+async function loadFromLocation({ replaceNamedHash = true } = {}) {
+  const parsed = parseLocation();
+  if (parsed.type === "error") {
+    setPresetStatus(parsed.error);
+    return;
+  }
+  if (parsed.type === "inline") {
+    adoptPreset(parsed.preset, {
+      writeUrl: false,
+      status: parsed.preset.name
+        ? `Loaded “${parsed.preset.name}” from this link.`
+        : "Loaded setup from this link.",
+    });
+    return;
+  }
+  if (parsed.type === "named") {
+    try {
+      const preset = await fetchCatalogPreset(parsed.name);
+      adoptPreset(preset, {
+        writeUrl: !replaceNamedHash,
+        status: `Loaded library preset “${preset.name || parsed.name}”. Short link: #preset=${parsed.name}`,
+      });
+    } catch (err) {
+      setPresetStatus(err.message || "Could not load that preset.");
+    }
+  }
+}
+
 $("playBtn").addEventListener("click", play);
 $("pauseBtn").addEventListener("click", pause);
 $("resetBtn").addEventListener("click", reset);
 $("perturbBtn").addEventListener("click", perturb);
+$("copyLinkBtn").addEventListener("click", copyShareLink);
 
 document.querySelectorAll("input, select").forEach((el) => {
-  el.addEventListener("input", applyAll);
-  el.addEventListener("change", applyAll);
+  if (el.closest("[data-preset-ui]")) return;
+  el.addEventListener("input", () => {
+    applyAll();
+    scheduleUrlSync();
+  });
+  el.addEventListener("change", () => {
+    applyAll();
+    scheduleUrlSync();
+  });
+});
+
+$("savePresetBtn").addEventListener("click", () => {
+  try {
+    const name = saveLocalPreset($("presetName").value, capturePreset($("presetName").value.trim()));
+    refreshLocalSelect(name);
+    writeShareHash(capturePreset(name));
+    setPresetStatus(`Saved “${name}” on this browser. Copy link to share it with someone else.`);
+  } catch (err) {
+    setPresetStatus(err.message);
+  }
+});
+
+$("loadLocalBtn").addEventListener("click", () => {
+  const name = $("localSelect").value;
+  const all = listLocalPresets();
+  if (!name || !all[name]) {
+    setPresetStatus("Choose a locally saved preset first.");
+    return;
+  }
+  adoptPreset(all[name], { status: `Loaded “${name}” from this browser.` });
+});
+
+$("localSelect").addEventListener("change", () => {
+  const name = $("localSelect").value;
+  if (name) $("presetName").value = name;
+});
+
+$("deletePresetBtn").addEventListener("click", () => {
+  const name = $("localSelect").value || $("presetName").value.trim();
+  if (!name) {
+    setPresetStatus("Choose a local preset to delete.");
+    return;
+  }
+  deleteLocalPreset(name);
+  refreshLocalSelect();
+  setPresetStatus(`Deleted “${name}” from this browser.`);
+});
+
+$("catalogSelect").addEventListener("change", async () => {
+  const id = $("catalogSelect").value;
+  if (!id) return;
+  try {
+    const preset = await fetchCatalogPreset(id);
+    adoptPreset(preset, {
+      writeUrl: false,
+      status: `Loaded “${preset.name || id}”. Share: ${catalogUrl(id)}`,
+    });
+    history.replaceState(null, "", location.pathname + "#preset=" + encodeURIComponent(id));
+  } catch (err) {
+    setPresetStatus(err.message);
+  }
+});
+
+$("exportPresetBtn").addEventListener("click", () => {
+  const preset = capturePreset($("presetName").value.trim());
+  const blob = new Blob([JSON.stringify(preset, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${(preset.name || "lorenz-preset").replace(/\s+/g, "-")}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  setPresetStatus("Downloaded JSON. You can also drop a file into the repo as presets/name.json for a short #preset=name link.");
+});
+
+$("importPresetBtn").addEventListener("click", () => $("importPresetFile").click());
+$("importPresetFile").addEventListener("change", async () => {
+  const file = $("importPresetFile").files[0];
+  $("importPresetFile").value = "";
+  if (!file) return;
+  try {
+    const preset = JSON.parse(await file.text());
+    if (!preset || typeof preset !== "object" || !preset.params) {
+      throw new Error("That file is not a Lorenz preset.");
+    }
+    adoptPreset(preset, { status: `Imported “${preset.name || file.name}”.` });
+  } catch (err) {
+    setPresetStatus(err.message || "Could not import that file.");
+  }
+});
+
+window.addEventListener("hashchange", () => {
+  loadFromLocation({ replaceNamedHash: true });
 });
 
 window.addEventListener("keydown", (e) => {
@@ -393,4 +605,20 @@ function frame() {
 
 applyAll();
 resetSim(true);
+refreshLocalSelect();
+fetchCatalogIndex()
+  .then((items) => {
+    catalog = items;
+    const select = $("catalogSelect");
+    for (const item of items) {
+      const opt = document.createElement("option");
+      opt.value = item.id;
+      opt.textContent = item.name || item.id;
+      select.appendChild(opt);
+    }
+    const parsed = parseLocation();
+    if (parsed.type === "named") select.value = parsed.name;
+  })
+  .catch(() => {});
+loadFromLocation();
 requestAnimationFrame(frame);

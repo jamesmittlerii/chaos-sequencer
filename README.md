@@ -14,9 +14,24 @@ python3 -m http.server 8080
 
 Then open [http://localhost:8080](http://localhost:8080). Click **Play**. Space also toggles play/pause.
 
+Live site: [https://jamesmittlerii.github.io/chaos-sequencer/](https://jamesmittlerii.github.io/chaos-sequencer/)
+
 ```bash
-npm test    # pipeline determinism / RK4 bounds
+npm test    # pipeline determinism / RK4 bounds / preset encoding
 ```
+
+## Shareable presets
+
+The address bar is the preset. **Copy link** puts a URL on the clipboard that recreates every control, including the Lorenz seed.
+
+Examples:
+
+- Full snapshot (portable between people): `https://jamesmittlerii.github.io/chaos-sequencer/#p=…`
+- Named library preset from this repo: [https://jamesmittlerii.github.io/chaos-sequencer/#preset=trio](https://jamesmittlerii.github.io/chaos-sequencer/#preset=trio)
+
+Library presets are JSON files in `presets/`. Add `presets/my-pad.json` and list it in `presets/index.json` to get a short `#preset=my-pad` link after you push.
+
+**Save** stores a name in this browser only (`localStorage`). That does not travel with a link — copy the share URL (or export JSON) to send a setup to someone else.
 
 ## Pipeline
 

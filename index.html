@@ -21,6 +21,7 @@
         <button id="pauseBtn">Pause</button>
         <button id="resetBtn">Reset</button>
         <button class="danger" id="perturbBtn" title="Nudge x0 by 1e-6">Perturb seed</button>
+        <button id="copyLinkBtn" title="Copy a URL that recreates this setup">Copy link</button>
       </div>
     </header>
 
@@ -43,6 +44,37 @@
       </section>
 
       <aside class="controls">
+        <details class="panel" open data-preset-ui>
+          <summary>Presets</summary>
+          <div class="row">
+            <div class="field span2">
+              <span class="lbl">library (shareable short links)</span>
+              <select id="catalogSelect">
+                <option value="">Choose a library preset…</option>
+              </select>
+            </div>
+            <div class="field span2">
+              <span class="lbl">saved on this browser</span>
+              <select id="localSelect">
+                <option value="">No local presets yet</option>
+              </select>
+            </div>
+            <div class="field span2">
+              <span class="lbl">name</span>
+              <input type="text" id="presetName" placeholder="e.g. night pad" maxlength="64" autocomplete="off" />
+            </div>
+            <div class="field span2 preset-actions">
+              <button type="button" id="loadLocalBtn">Load</button>
+              <button type="button" class="primary" id="savePresetBtn">Save</button>
+              <button type="button" id="deletePresetBtn">Delete</button>
+              <button type="button" id="exportPresetBtn">Export JSON</button>
+              <button type="button" id="importPresetBtn">Import JSON</button>
+              <input type="file" id="importPresetFile" accept="application/json,.json" hidden />
+            </div>
+            <p class="preset-status span2" id="presetStatus">Links encode the full setup, so anyone can open the same sequence.</p>
+          </div>
+        </details>
+
         <details class="panel" open>
           <summary>Lorenz attractor</summary>
           <div class="row">

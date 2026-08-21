@@ -1,0 +1,5 @@
+[
+  { "id": "default", "name": "Default" },
+  { "id": "trio", "name": "Three voices" },
+  { "id": "quantized", "name": "Quantized grid" }
+]
