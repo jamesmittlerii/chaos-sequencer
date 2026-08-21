@@ -1,0 +1,71 @@
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Prepare deployment artifact
+        env:
+          FULL_SHA: ${{ github.sha }}
+        run: |
+          mkdir _site
+          cp -R index.html .nojekyll css js presets _site/
+          python3 << 'PY'
+          import os
+          import re
+          import sys
+          from pathlib import Path
+
+          sha = os.environ["FULL_SHA"][:7]
+          html_path = Path("_site/index.html")
+          html = html_path.read_text()
+          html = re.sub(
+              r'(<meta name="lorenz-build" content=")[^"]+(")',
+              rf"\g<1>{sha}\g<2>",
+              html,
+              count=1,
+          )
+          html = re.sub(r"(\?v=)[A-Za-z0-9_-]+", rf"\g<1>{sha}", html)
+          html = re.sub(
+              r'(id="buildStamp"[^>]*>)[^<]+',
+              rf"\g<1>{sha}",
+              html,
+              count=1,
+          )
+          if "<!DOCTYPE html>" not in html or 'rel="stylesheet"' not in html:
+              sys.exit("stamp produced invalid HTML")
+          html_path.write_text(html)
+          print(f"prepared build {sha}")
+          PY
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
