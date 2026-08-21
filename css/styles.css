@@ -63,6 +63,14 @@ header {
   letter-spacing: 0.04em;
 }
 
+.build-id {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: rgba(230, 236, 245, 0.45);
+  margin-left: 0.45em;
+}
+
 .transport { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
 .preset-actions {

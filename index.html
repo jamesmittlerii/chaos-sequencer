@@ -4,17 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>LORENZ — chaotic sequencer</title>
+  <meta name="lorenz-build" content="local" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=local" />
 </head>
 <body>
   <div class="app">
     <header>
       <div class="brand">
         <h1>Lorenz</h1>
-        <p>deterministic chaos as sequencer</p>
+        <p>deterministic chaos as sequencer <span class="build-id" id="buildStamp" title="Git commit for this page">local</span></p>
       </div>
       <div class="transport">
         <button class="primary" id="playBtn">Play</button>
@@ -436,6 +437,6 @@
       </table>
     </section>
   </div>
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/app.js?v=local"></script>
 </body>
 </html>
