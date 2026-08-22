@@ -136,6 +136,12 @@ button.danger { color: var(--ember); }
   height: auto;
   aspect-ratio: 1 / 1;
   justify-self: center;
+  cursor: grab;
+  touch-action: none;
+}
+
+#attractor.dragging {
+  cursor: grabbing;
 }
 
 #timeline {

@@ -43,9 +43,44 @@ export class Visualizer {
     this.current = null;
     this.visiblePoints = [];
     this.visibleEvents = [];
+    this.viewYaw = 0;
+    this.viewPitch = 0;
+    this.dragPointer = null;
     this.dpr = 1;
+    this._bindRotationControls();
     this._resize();
     window.addEventListener("resize", () => this._resize());
+  }
+
+  _bindRotationControls() {
+    const canvas = this.attractorCanvas;
+    canvas.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      this.dragPointer = { id: event.pointerId, x: event.clientX, y: event.clientY };
+      canvas.setPointerCapture(event.pointerId);
+      canvas.classList.add("dragging");
+    });
+    canvas.addEventListener("pointermove", (event) => {
+      if (this.dragPointer?.id !== event.pointerId) return;
+      const dx = event.clientX - this.dragPointer.x;
+      const dy = event.clientY - this.dragPointer.y;
+      this.viewYaw += dx * 0.008;
+      this.viewPitch += dy * 0.008;
+      this.dragPointer.x = event.clientX;
+      this.dragPointer.y = event.clientY;
+    });
+    const stopDragging = (event) => {
+      if (this.dragPointer?.id !== event.pointerId) return;
+      this.dragPointer = null;
+      canvas.classList.remove("dragging");
+    };
+    canvas.addEventListener("pointerup", stopDragging);
+    canvas.addEventListener("pointercancel", stopDragging);
+    canvas.addEventListener("lostpointercapture", stopDragging);
+    canvas.addEventListener("dblclick", () => {
+      this.viewYaw = 0;
+      this.viewPitch = 0;
+    });
   }
 
   reset() {
@@ -110,15 +145,51 @@ export class Visualizer {
     }
   }
 
+  _projectPoint(p) {
+    const centerX = (this.viewBounds.x[0] + this.viewBounds.x[1]) / 2;
+    const centerY = (this.viewBounds.y[0] + this.viewBounds.y[1]) / 2;
+    const centerZ = (this.viewBounds.z[0] + this.viewBounds.z[1]) / 2;
+    const x = p.x - centerX;
+    const y = p.y - centerY;
+    const z = p.z - centerZ;
+    const pitch = this.viewPitch + (this.projection === "xz" ? -Math.PI / 2 : 0);
+    const cosYaw = Math.cos(this.viewYaw);
+    const sinYaw = Math.sin(this.viewYaw);
+    const cosPitch = Math.cos(pitch);
+    const sinPitch = Math.sin(pitch);
+    const rotatedX = x * cosYaw + z * sinYaw;
+    const rotatedZ = -x * sinYaw + z * cosYaw;
+    return {
+      x: rotatedX,
+      y: y * cosPitch - rotatedZ * sinPitch,
+    };
+  }
+
+  _projectedBounds() {
+    const [xLo, xHi] = this.viewBounds.x;
+    const [yLo, yHi] = this.viewBounds.y;
+    const [zLo, zHi] = this.viewBounds.z;
+    const corners = [];
+    for (const x of [xLo, xHi]) {
+      for (const y of [yLo, yHi]) {
+        for (const z of [zLo, zHi]) corners.push(this._projectPoint({ x, y, z }));
+      }
+    }
+    return {
+      x: [Math.min(...corners.map((p) => p.x)), Math.max(...corners.map((p) => p.x))],
+      y: [Math.min(...corners.map((p) => p.y)), Math.max(...corners.map((p) => p.y))],
+    };
+  }
+
   _mapPoint(p, w, h) {
     const pad = 28 * this.dpr;
     const usableW = w - pad * 2;
     const usableH = h - pad * 2;
-    const verticalAxis = this.projection === "xz" ? "z" : "y";
-    const [xLo, xHi] = this.viewBounds.x;
-    const [yLo, yHi] = this.viewBounds[verticalAxis];
-    const dataX = p.x - xLo;
-    const dataY = yHi - p[verticalAxis];
+    const projected = this._projectPoint(p);
+    const [xLo, xHi] = this.renderBounds.x;
+    const [yLo, yHi] = this.renderBounds.y;
+    const dataX = projected.x - xLo;
+    const dataY = yHi - projected.y;
     const rangeW = xHi - xLo;
     const rangeH = yHi - yLo;
     // Uniform scale so tall/narrow canvases (phones) don't stretch the attractor.
@@ -133,6 +204,80 @@ export class Visualizer {
     };
   }
 
+  _drawPresetCenterLine(ctx, w, h) {
+    if (Math.abs(this.viewYaw) >= 1e-9 || Math.abs(this.viewPitch) >= 1e-9) return;
+    const origin = this._mapPoint({ x: this.xCenter, y: 0, z: 0 }, w, h);
+    ctx.strokeStyle = "rgba(255,255,255,0.08)";
+    ctx.lineWidth = this.dpr;
+    ctx.beginPath();
+    ctx.moveTo(origin.x, 0);
+    ctx.lineTo(origin.x, h);
+    ctx.stroke();
+  }
+
+  _drawTrajectory(ctx, w, h) {
+    const pts = this.visiblePoints;
+    if (pts.length <= 1) return;
+    ctx.lineWidth = 1.15 * this.dpr;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    let i = 1;
+    while (i < pts.length) {
+      const negative = pts[i].x < this.xCenter;
+      const lobe = negative ? LOBE_A : LOBE_B;
+      const alpha = 0.14 + 0.72 * (i / pts.length);
+      ctx.strokeStyle = lobe.stroke.replace("0.85", alpha.toFixed(3));
+      ctx.beginPath();
+      const start = this._mapPoint(pts[i - 1], w, h);
+      ctx.moveTo(start.x, start.y);
+      while (i < pts.length && (pts[i].x < this.xCenter) === negative) {
+        const p = this._mapPoint(pts[i], w, h);
+        ctx.lineTo(p.x, p.y);
+        i++;
+      }
+      ctx.stroke();
+    }
+  }
+
+  _drawAttractorEvents(ctx, w, h) {
+    for (const ev of this.visibleEvents) {
+      const { x, y } = this._mapPoint(ev, w, h);
+      ctx.beginPath();
+      ctx.arc(x, y, 4.5 * this.dpr, 0, Math.PI * 2);
+      ctx.strokeStyle = EVENT_COLORS[ev.type] ?? "#fff";
+      ctx.lineWidth = 1.4 * this.dpr;
+      ctx.stroke();
+    }
+  }
+
+  _drawCurrentPoint(ctx, w, h) {
+    if (!this.current) return;
+    const { x, y } = this._mapPoint(this.current, w, h);
+    const lobe = this.current.x < this.xCenter ? LOBE_A : LOBE_B;
+    ctx.beginPath();
+    ctx.arc(x, y, 10 * this.dpr, 0, Math.PI * 2);
+    ctx.fillStyle = lobe.fill + "33";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, y, 3.6 * this.dpr, 0, Math.PI * 2);
+    ctx.fillStyle = "#fff";
+    ctx.fill();
+  }
+
+  _drawAttractorLabels(ctx, h) {
+    const isPresetView = Math.abs(this.viewYaw) < 1e-9 && Math.abs(this.viewPitch) < 1e-9;
+    let axes = "3D view";
+    if (isPresetView) axes = this.projection === "xz" ? "X / Z" : "X / Y";
+    ctx.fillStyle = "rgba(230,236,245,0.45)";
+    ctx.font = `${11 * this.dpr}px "IBM Plex Mono", ui-monospace, monospace`;
+    ctx.fillText(`${axes}  ·  ${this.systemLabel}  ·  drag to rotate`, 14 * this.dpr, 18 * this.dpr);
+    const centerLabel = Number(this.xCenter.toFixed(2));
+    ctx.fillStyle = LOBE_A.fill;
+    ctx.fillText(`lobe A  x<${centerLabel}`, 14 * this.dpr, h - 16 * this.dpr);
+    ctx.fillStyle = LOBE_B.fill;
+    ctx.fillText(`lobe B  x>${centerLabel}`, 120 * this.dpr, h - 16 * this.dpr);
+  }
+
   _drawAttractor() {
     const ctx = this.actx;
     const w = this.attractorCanvas.width;
@@ -142,70 +287,12 @@ export class Visualizer {
     ctx.fillStyle = "#07090d";
     ctx.fillRect(0, 0, w, h);
     this._grid(ctx, w, h);
-
-    const origin = this._mapPoint({ x: this.xCenter, y: 0, z: 0 }, w, h);
-    ctx.strokeStyle = "rgba(255,255,255,0.08)";
-    ctx.lineWidth = this.dpr;
-    ctx.beginPath();
-    ctx.moveTo(origin.x, 0);
-    ctx.lineTo(origin.x, h);
-    ctx.stroke();
-
-    const pts = this.visiblePoints;
-    if (pts.length > 1) {
-      ctx.lineWidth = 1.15 * this.dpr;
-      ctx.lineJoin = "round";
-      ctx.lineCap = "round";
-      let i = 1;
-      while (i < pts.length) {
-        const negative = pts[i].x < this.xCenter;
-        const lobe = negative ? LOBE_A : LOBE_B;
-        const alpha = 0.14 + 0.72 * (i / pts.length);
-        ctx.strokeStyle = lobe.stroke.replace("0.85", alpha.toFixed(3));
-        ctx.beginPath();
-        const start = this._mapPoint(pts[i - 1], w, h);
-        ctx.moveTo(start.x, start.y);
-        while (i < pts.length && (pts[i].x < this.xCenter) === negative) {
-          const p = this._mapPoint(pts[i], w, h);
-          ctx.lineTo(p.x, p.y);
-          i++;
-        }
-        ctx.stroke();
-      }
-    }
-
-    for (const ev of this.visibleEvents) {
-      const { x, y } = this._mapPoint(ev, w, h);
-      ctx.beginPath();
-      ctx.arc(x, y, 4.5 * this.dpr, 0, Math.PI * 2);
-      ctx.strokeStyle = EVENT_COLORS[ev.type] ?? "#fff";
-      ctx.lineWidth = 1.4 * this.dpr;
-      ctx.stroke();
-    }
-
-    if (this.current) {
-      const { x, y } = this._mapPoint(this.current, w, h);
-      const lobe = this.current.x < this.xCenter ? LOBE_A : LOBE_B;
-      ctx.beginPath();
-      ctx.arc(x, y, 10 * this.dpr, 0, Math.PI * 2);
-      ctx.fillStyle = lobe.fill + "33";
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(x, y, 3.6 * this.dpr, 0, Math.PI * 2);
-      ctx.fillStyle = "#fff";
-      ctx.fill();
-    }
-
-    ctx.fillStyle = "rgba(230,236,245,0.45)";
-    ctx.font = `${11 * this.dpr}px "IBM Plex Mono", ui-monospace, monospace`;
-    const axes = this.projection === "xz" ? "X / Z" : "X / Y";
-    const label = `${axes}  ·  ${this.systemLabel}`;
-    ctx.fillText(label, 14 * this.dpr, 18 * this.dpr);
-    const centerLabel = Number(this.xCenter.toFixed(2));
-    ctx.fillStyle = LOBE_A.fill;
-    ctx.fillText(`lobe A  x<${centerLabel}`, 14 * this.dpr, h - 16 * this.dpr);
-    ctx.fillStyle = LOBE_B.fill;
-    ctx.fillText(`lobe B  x>${centerLabel}`, 120 * this.dpr, h - 16 * this.dpr);
+    this.renderBounds = this._projectedBounds();
+    this._drawPresetCenterLine(ctx, w, h);
+    this._drawTrajectory(ctx, w, h);
+    this._drawAttractorEvents(ctx, w, h);
+    this._drawCurrentPoint(ctx, w, h);
+    this._drawAttractorLabels(ctx, h);
   }
 
   _drawTimeline(nowAudio) {
