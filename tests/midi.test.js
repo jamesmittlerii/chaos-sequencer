@@ -24,7 +24,7 @@ test("MIDI engine schedules note on and note off messages", () => {
     [0x83, 60, 0],
   ]);
   assert.ok(messages[0].timestamp >= before + 195);
-  assert.equal(messages[1].timestamp - messages[0].timestamp, 250);
+  assert.ok(Math.abs(messages[1].timestamp - messages[0].timestamp - 250) < 1e-6);
 });
 
 test("MIDI engine clears scheduled messages and silences every channel", () => {

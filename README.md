@@ -6,13 +6,16 @@ The attractor never writes the audio waveform. It only produces a stream of `(x,
 
 ## Run
 
-ES modules need a local server (opening `index.html` as a file will fail):
+Install dependencies and start the Vite development server:
 
 ```bash
-python3 -m http.server 8080
+npm install
+npm run dev
 ```
 
-Then open [http://localhost:8080](http://localhost:8080). Click **Play**. Space also toggles play/pause.
+Then open [http://localhost:5173](http://localhost:5173). Click **Play**. Space also toggles play/pause.
+
+`npm run build` creates the production site in `dist/`. The GitHub Pages workflow builds and deploys that directory automatically.
 
 Live site: [https://jamesmittlerii.github.io/chaos-sequencer/](https://jamesmittlerii.github.io/chaos-sequencer/)
 

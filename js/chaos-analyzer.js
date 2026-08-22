@@ -27,6 +27,7 @@ function interpolateState(prev, curr, frac) {
 export class ChaosAnalyzer {
   constructor(options = {}) {
     this.zThreshold = options.zThreshold ?? 25;
+    this.xThreshold = options.xThreshold ?? 0;
     this.reset();
   }
 
@@ -39,6 +40,11 @@ export class ChaosAnalyzer {
 
   setZThreshold(value) {
     this.zThreshold = value;
+  }
+
+  setConfig({ zThreshold, xThreshold } = {}) {
+    if (zThreshold !== undefined) this.zThreshold = zThreshold;
+    if (xThreshold !== undefined) this.xThreshold = xThreshold;
   }
 
   push(state) {
@@ -59,8 +65,8 @@ export class ChaosAnalyzer {
       distance,
     };
 
-    this._detectZeroCrossing(events, prev, sample, "x", "x-crossing");
-    this._detectZeroCrossing(events, prev, sample, "y", "y-crossing");
+    this._detectCrossing(events, prev, sample, "x", this.xThreshold, "x-crossing");
+    this._detectCrossing(events, prev, sample, "y", 0, "y-crossing");
     this._detectExtrema(events, prev, sample, "x");
     this._detectExtrema(events, prev, sample, "y");
     this._detectExtrema(events, prev, sample, "z");
@@ -88,7 +94,7 @@ export class ChaosAnalyzer {
       distance: sample.distance,
       dt: dtEvent,
       dtType,
-      lobe: sample.x < 0 ? "A" : "B",
+      lobe: sample.x < this.xThreshold ? "A" : "B",
       ...extra,
     };
 
@@ -98,20 +104,20 @@ export class ChaosAnalyzer {
     return event;
   }
 
-  _detectZeroCrossing(events, prev, curr, axis, type) {
+  _detectCrossing(events, prev, curr, axis, threshold, type) {
     const a = prev[axis];
     const b = curr[axis];
-    if (a === 0 && b === 0) return;
-    const crossedUp = a < 0 && b >= 0;
-    const crossedDown = a > 0 && b <= 0;
+    if (a === threshold && b === threshold) return;
+    const crossedUp = a < threshold && b >= threshold;
+    const crossedDown = a > threshold && b <= threshold;
     if (!crossedUp && !crossedDown) return;
 
     const denom = b - a;
-    const frac = denom === 0 ? 0 : -a / denom;
+    const frac = denom === 0 ? 0 : (threshold - a) / denom;
     const interp = interpolateState(prev, curr, frac);
     interp.velocity = curr.velocity;
     interp.distance = hypot3(interp.x, interp.y, interp.z);
-    interp[axis] = 0;
+    interp[axis] = threshold;
 
     const direction = crossedUp ? "up" : "down";
     this._emit(events, type, interp, {

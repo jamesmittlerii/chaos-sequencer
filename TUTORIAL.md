@@ -339,10 +339,11 @@ A different chaotic flow (Rössler, Chua, Duffing) can replace `LorenzAttractor`
 Local development (ES modules will not load from `file://`):
 
 ```bash
-python3 -m http.server 8080
+npm install
+npm run dev
 ```
 
-Then [http://localhost:8080](http://localhost:8080). `npm test` checks RK4 bounds, seed replay, sensitive dependence, and preset encode/decode.
+Then [http://localhost:5173](http://localhost:5173). `npm test` checks RK4 bounds, seed replay, sensitive dependence, and preset encode/decode.
 
 ---
 

@@ -116,6 +116,7 @@ export class MusicalMapper {
     this.durationRange = config.durationRange ?? this.durationRange ?? [0.08, 0.55];
     this.velocityRange = config.velocityRange ?? this.velocityRange ?? [0.15, 0.95];
     this.bounds = { ...LORENZ_BOUNDS, ...config.bounds };
+    this.xCenter = config.xCenter ?? this.xCenter ?? 0;
     this.lobeA = { ...DEFAULT_LOBE, ...this.lobeA, ...config.lobeA };
     this.lobeB = { ...DEFAULT_LOBE, ...this.lobeB, ...config.lobeB };
   }
@@ -125,7 +126,7 @@ export class MusicalMapper {
   }
 
   map(chaosEvent) {
-    const lobe = chaosEvent.lobe ?? (chaosEvent.x < 0 ? "A" : "B");
+    const lobe = chaosEvent.lobe ?? (chaosEvent.x < this.xCenter ? "A" : "B");
     const lobeCfg = this.lobeConfig(lobe);
 
     const scaleName = lobeCfg.scale || this.scaleName;

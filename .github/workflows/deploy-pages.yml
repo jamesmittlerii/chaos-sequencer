@@ -24,12 +24,25 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Prepare deployment artifact
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Stamp deployment build
         env:
           FULL_SHA: ${{ github.sha }}
         run: |
-          mkdir _site
-          cp -R index.html .nojekyll css js presets _site/
           python3 << 'PY'
           import os
           import re
@@ -37,7 +50,7 @@ jobs:
           from pathlib import Path
 
           sha = os.environ["FULL_SHA"][:7]
-          html_path = Path("_site/index.html")
+          html_path = Path("dist/index.html")
           html = html_path.read_text()
           html = re.sub(
               r'(<meta name="lorenz-build" content=")[^"]+(")',
@@ -45,7 +58,6 @@ jobs:
               html,
               count=1,
           )
-          html = re.sub(r"(\?v=)[A-Za-z0-9_-]+", rf"\g<1>{sha}", html)
           html = re.sub(
               r'(id="buildStamp"[^>]*>)[^<]+',
               rf"\g<1>{sha}",
@@ -64,7 +76,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: dist
 
       - name: Deploy to GitHub Pages
         id: deployment

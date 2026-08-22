@@ -261,6 +261,7 @@ function applyMappingFromUI() {
     rootName: $("root").value,
     scaleName,
     bounds: system.bounds,
+    xCenter: system.xCenter ?? 0,
     lobeA: {
       octaveOffset: num("lobeAOctave"),
       velocityScale: num("lobeAVel"),
@@ -318,7 +319,11 @@ function applyAll() {
   if (hydrating) return;
   applyAttractorFromUI();
   applyMappingFromUI();
-  analyzer.setZThreshold(num("zThreshold"));
+  const system = ATTRACTOR_SYSTEMS[$("systemId").value] ?? ATTRACTOR_SYSTEMS.lorenz;
+  analyzer.setConfig({
+    zThreshold: num("zThreshold"),
+    xThreshold: system.xCenter ?? 0,
+  });
   sequencer.setConfig({
     bpm: num("bpm"),
     grid: $("grid").value,
@@ -722,12 +727,14 @@ window.addEventListener("keydown", (e) => {
 
 function hudFrom(state) {
   if (!state) return;
+  const system = ATTRACTOR_SYSTEMS[$("systemId").value] ?? ATTRACTOR_SYSTEMS.lorenz;
+  const isA = state.x < (system.xCenter ?? 0);
   $("hudT").textContent = state.t.toFixed(3);
   $("hudX").textContent = state.x.toFixed(2);
   $("hudY").textContent = state.y.toFixed(2);
   $("hudZ").textContent = state.z.toFixed(2);
-  $("hudLobe").textContent = state.x < 0 ? "A" : "B";
-  $("hudLobe").parentElement.className = state.x < 0 ? "a" : "b";
+  $("hudLobe").textContent = isA ? "A" : "B";
+  $("hudLobe").parentElement.className = isA ? "a" : "b";
 }
 
 function frame() {

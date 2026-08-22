@@ -30,7 +30,10 @@ test("every system is deterministic, finite, and produces musical events promptl
     const definition = ATTRACTOR_SYSTEMS[systemId];
     const first = new ChaoticAttractor(systemId);
     const second = new ChaoticAttractor(systemId);
-    const analyzer = new ChaosAnalyzer({ zThreshold: definition.zThreshold });
+    const analyzer = new ChaosAnalyzer({
+      zThreshold: definition.zThreshold,
+      xThreshold: definition.xCenter ?? 0,
+    });
     const eventTypes = new Set();
     const steps = Math.ceil(10 / first.dt);
 
@@ -63,4 +66,33 @@ test("switching systems restores that system's parameters and seed", () => {
   assert.equal(attractor.x0, 1);
   assert.equal(attractor.dt, 0.01);
   assert.deepEqual(attractor.clone().state(), attractor.state());
+});
+
+test("Rabinovich–Fabrikant defaults use an irregular chaotic regime", () => {
+  const definition = ATTRACTOR_SYSTEMS.rabinovich;
+  const attractor = new ChaoticAttractor("rabinovich");
+  const crossingTimes = [];
+  let previousX = attractor.x;
+
+  for (let i = 0; i < Math.ceil(100 / attractor.dt); i++) {
+    const state = attractor.step();
+    const center = definition.xCenter;
+    if (
+      (previousX < center && state.x >= center) ||
+      (previousX > center && state.x <= center)
+    ) {
+      crossingTimes.push(state.t);
+    }
+    previousX = state.x;
+  }
+
+  const intervals = crossingTimes.slice(1).map((time, i) => time - crossingTimes[i]);
+  const mean = intervals.reduce((sum, value) => sum + value, 0) / intervals.length;
+  const variance =
+    intervals.reduce((sum, value) => sum + (value - mean) ** 2, 0) / intervals.length;
+
+  assert.equal(attractor.params.alpha, 1.1);
+  assert.equal(attractor.params.gamma, 0.87);
+  assert.ok(crossingTimes.length > 50);
+  assert.ok(Math.sqrt(variance) / mean > 0.4);
 });

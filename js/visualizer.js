@@ -39,6 +39,7 @@ export class Visualizer {
     this.playbackT = 0;
     this.systemLabel = "Lorenz";
     this.viewBounds = { x: [-25, 25], y: [-32, 32], z: [0, 52] };
+    this.xCenter = 0;
     this.current = null;
     this.visiblePoints = [];
     this.visibleEvents = [];
@@ -76,6 +77,7 @@ export class Visualizer {
   setSystem(definition) {
     this.systemLabel = definition.label;
     this.viewBounds = definition.viewBounds;
+    this.xCenter = definition.xCenter ?? 0;
   }
 
   setPlayback(simulationT) {
@@ -141,7 +143,7 @@ export class Visualizer {
     ctx.fillRect(0, 0, w, h);
     this._grid(ctx, w, h);
 
-    const origin = this._mapPoint({ x: 0, y: 0, z: 0 }, w, h);
+    const origin = this._mapPoint({ x: this.xCenter, y: 0, z: 0 }, w, h);
     ctx.strokeStyle = "rgba(255,255,255,0.08)";
     ctx.lineWidth = this.dpr;
     ctx.beginPath();
@@ -156,14 +158,14 @@ export class Visualizer {
       ctx.lineCap = "round";
       let i = 1;
       while (i < pts.length) {
-        const negative = pts[i].x < 0;
+        const negative = pts[i].x < this.xCenter;
         const lobe = negative ? LOBE_A : LOBE_B;
         const alpha = 0.14 + 0.72 * (i / pts.length);
         ctx.strokeStyle = lobe.stroke.replace("0.85", alpha.toFixed(3));
         ctx.beginPath();
         const start = this._mapPoint(pts[i - 1], w, h);
         ctx.moveTo(start.x, start.y);
-        while (i < pts.length && (pts[i].x < 0) === negative) {
+        while (i < pts.length && (pts[i].x < this.xCenter) === negative) {
           const p = this._mapPoint(pts[i], w, h);
           ctx.lineTo(p.x, p.y);
           i++;
@@ -183,7 +185,7 @@ export class Visualizer {
 
     if (this.current) {
       const { x, y } = this._mapPoint(this.current, w, h);
-      const lobe = this.current.x < 0 ? LOBE_A : LOBE_B;
+      const lobe = this.current.x < this.xCenter ? LOBE_A : LOBE_B;
       ctx.beginPath();
       ctx.arc(x, y, 10 * this.dpr, 0, Math.PI * 2);
       ctx.fillStyle = lobe.fill + "33";
@@ -199,10 +201,11 @@ export class Visualizer {
     const axes = this.projection === "xz" ? "X / Z" : "X / Y";
     const label = `${axes}  ·  ${this.systemLabel}`;
     ctx.fillText(label, 14 * this.dpr, 18 * this.dpr);
+    const centerLabel = Number(this.xCenter.toFixed(2));
     ctx.fillStyle = LOBE_A.fill;
-    ctx.fillText("lobe A  x<0", 14 * this.dpr, h - 16 * this.dpr);
+    ctx.fillText(`lobe A  x<${centerLabel}`, 14 * this.dpr, h - 16 * this.dpr);
     ctx.fillStyle = LOBE_B.fill;
-    ctx.fillText("lobe B  x>0", 120 * this.dpr, h - 16 * this.dpr);
+    ctx.fillText(`lobe B  x>${centerLabel}`, 120 * this.dpr, h - 16 * this.dpr);
   }
 
   _drawTimeline(nowAudio) {
