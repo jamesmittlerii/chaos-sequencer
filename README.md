@@ -73,6 +73,8 @@ Each system starts with its standard chaotic parameters and a calibrated view/mu
 
 `x < 0` is state A (teal), `x > 0` is state B (ember). Each state has its own octave, velocity, duration, pan, filter, optional scale, and degree weighting. A lobe crossing is a musical transition, not just another random note.
 
+**Deep dive:** [LOBES.md](LOBES.md) — how lobe assignment works, every control in the panel, formulas, defaults, experiments, and interaction with Harmony / Voices / Modulation.
+
 ## Voices
 
 All voices share one attractor and remain deterministic with randomness off.
