@@ -322,7 +322,7 @@ Stages are intentionally separate. Musical code does not live in the integrator;
 
 | File | Role |
 |---|---|
-| `js/lorenz.js` | RK4 Lorenz ODE. `step()` → `{ x, y, z, t }` |
+| `js/attractors.js` | Chaotic-system registry and RK4 integrator. `step()` → `{ x, y, z, t, dx, dy, dz }` |
 | `js/chaos-analyzer.js` | Zero crossings, extrema, distance, velocity, Z threshold |
 | `js/event-generator.js` | Density + which voice cares about which event type |
 | `js/musical-mapper.js` | Normalized features → scale degree, velocity, duration, octave |
@@ -334,7 +334,7 @@ Stages are intentionally separate. Musical code does not live in the integrator;
 | `js/visualizer.js` | Trail, event marks, piano-roll timeline |
 | `js/app.js` | UI wiring |
 
-A different chaotic flow (Rössler, Chua, Duffing) can replace `LorenzAttractor` if it still exposes `step()` with `{ x, y, z, t }`. The mapper assumes Lorenz-like ranges; you would retune `LORENZ_BOUNDS` in `musical-mapper.js` for a different system.
+Choose a registered chaotic flow by constructing `ChaoticAttractor` with its system ID. Each registry entry supplies its equations, initial state, integration step, and mapping bounds.
 
 Local development (ES modules will not load from `file://`):
 

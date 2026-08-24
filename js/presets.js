@@ -112,7 +112,7 @@ function setControlValue(id, value) {
 
 export function normalizePreset(preset) {
   const source = preset && typeof preset === "object" ? preset : {};
-  const params = { ...(source.params ?? {}) };
+  const params = { ...source.params };
   params.systemId ||= "lorenz";
   if (!params.attractorParams || typeof params.attractorParams !== "object") {
     params.attractorParams =

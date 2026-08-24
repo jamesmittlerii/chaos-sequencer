@@ -1,14 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { ATTRACTOR_SYSTEMS, ChaoticAttractor } from "../js/attractors.js";
 import { ChaosAnalyzer } from "../js/chaos-analyzer.js";
 import { EventGenerator } from "../js/event-generator.js";
-import { LorenzAttractor, LORENZ_DEFAULTS } from "../js/lorenz.js";
 import {
   midiToFreq,
   midiToName,
   MusicalMapper,
   noteNameToMidi,
 } from "../js/musical-mapper.js";
+
+const LORENZ = ATTRACTOR_SYSTEMS.lorenz;
 
 function chaosEvent(overrides = {}) {
   return {
@@ -25,26 +27,19 @@ function chaosEvent(overrides = {}) {
 }
 
 test("Lorenz attractor uses defaults and computes derivatives", () => {
-  const attractor = new LorenzAttractor();
+  const attractor = new ChaoticAttractor("lorenz");
 
+  assert.deepEqual(attractor.params, { sigma: 10, rho: 28, beta: 8 / 3 });
   assert.deepEqual(
     {
-      sigma: attractor.sigma,
-      rho: attractor.rho,
-      beta: attractor.beta,
       dt: attractor.dt,
       x: attractor.x,
       y: attractor.y,
       z: attractor.z,
     },
     {
-      sigma: LORENZ_DEFAULTS.sigma,
-      rho: LORENZ_DEFAULTS.rho,
-      beta: LORENZ_DEFAULTS.beta,
-      dt: LORENZ_DEFAULTS.dt,
-      x: LORENZ_DEFAULTS.x,
-      y: LORENZ_DEFAULTS.y,
-      z: LORENZ_DEFAULTS.z,
+      dt: LORENZ.dt,
+      ...LORENZ.initial,
     },
   );
   assert.deepEqual(attractor.derivatives(1, 2, 3), {
@@ -55,8 +50,8 @@ test("Lorenz attractor uses defaults and computes derivatives", () => {
 });
 
 test("Lorenz trajectory remains bounded and deterministic", () => {
-  const first = new LorenzAttractor();
-  const replay = new LorenzAttractor();
+  const first = new ChaoticAttractor("lorenz");
+  const replay = new ChaoticAttractor("lorenz");
 
   for (let i = 0; i < 8000; i++) {
     first.step();
@@ -72,8 +67,8 @@ test("Lorenz trajectory remains bounded and deterministic", () => {
 });
 
 test("nearby Lorenz trajectories diverge", () => {
-  const first = new LorenzAttractor({ x: 0.1 });
-  const perturbed = new LorenzAttractor({ x: 0.1 + 1e-6 });
+  const first = new ChaoticAttractor("lorenz", { x: 0.1 });
+  const perturbed = new ChaoticAttractor("lorenz", { x: 0.1 + 1e-6 });
 
   for (let i = 0; i < 6000; i++) {
     first.step();
@@ -89,7 +84,7 @@ test("nearby Lorenz trajectories diverge", () => {
 });
 
 test("reset and clone preserve the intended Lorenz state", () => {
-  const attractor = new LorenzAttractor({ sigma: 12, x: 2, y: 3, z: 4 });
+  const attractor = new ChaoticAttractor("lorenz", { sigma: 12, x: 2, y: 3, z: 4 });
   attractor.step();
   const clone = attractor.clone();
 
@@ -143,7 +138,7 @@ test("chaos analyzer interpolates crossings and tracks event timing", () => {
 });
 
 test("the simulated pipeline produces mappable crossings", () => {
-  const attractor = new LorenzAttractor();
+  const attractor = new ChaoticAttractor("lorenz");
   const analyzer = new ChaosAnalyzer();
   const mapper = new MusicalMapper();
   const crossings = [];

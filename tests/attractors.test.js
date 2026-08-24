@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { ATTRACTOR_IDS, ATTRACTOR_SYSTEMS, ChaoticAttractor } from "../js/attractors.js";
 import { ChaosAnalyzer } from "../js/chaos-analyzer.js";
-import { LorenzAttractor } from "../js/lorenz.js";
 
 test("registry contains all seven source systems", () => {
   assert.deepEqual(ATTRACTOR_IDS, [
@@ -14,15 +13,6 @@ test("registry contains all seven source systems", () => {
     "halvorsen",
     "rabinovich",
   ]);
-});
-
-test("registry-backed Lorenz exactly preserves the original trajectory", () => {
-  const original = new LorenzAttractor();
-  const registered = new ChaoticAttractor("lorenz");
-
-  for (let i = 0; i < 2000; i++) {
-    assert.deepEqual(registered.step(), original.step());
-  }
 });
 
 test("every system is deterministic, finite, and produces musical events promptly", () => {
