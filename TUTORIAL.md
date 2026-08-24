@@ -106,6 +106,8 @@ Y is normalized against typical Lorenz bounds roughly `[-27, 27]`, then used as 
 
 The Lorenz attractor has two wings. This sequencer treats them as **state A** and **state B**.
 
+For a full control-by-control reference (formulas, code paths, FAQ), see **[LOBES.md](LOBES.md)**.
+
 Defaults already contrast them:
 
 | | Lobe A (`x < 0`, teal) | Lobe B (`x > 0`, ember) |
