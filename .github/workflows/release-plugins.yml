@@ -180,11 +180,31 @@ jobs:
       - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
 
+      - name: Install WebView2
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $version = "1.0.3485.44"
+          $pkgDir = Join-Path $env:USERPROFILE "AppData\Local\PackageManagement\NuGet\Packages\Microsoft.Web.WebView2.$version"
+          New-Item -ItemType Directory -Force -Path $pkgDir | Out-Null
+          $zip = Join-Path $env:RUNNER_TEMP "Microsoft.Web.WebView2.$version.zip"
+          Invoke-WebRequest -Uri "https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/$version" -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath $pkgDir -Force
+          foreach ($file in @(
+            "build\native\include\WebView2.h",
+            "build\native\x64\WebView2LoaderStatic.lib"
+          )) {
+            if (-not (Test-Path (Join-Path $pkgDir $file))) { throw "WebView2 package is missing $file" }
+          }
+
       - name: Build VST3
         shell: pwsh
         run: |
+          $ErrorActionPreference = "Stop"
           cmake -S plugin -B plugin/build -G "Visual Studio 18 2026" -A x64 -DLORENZ_VERSION="${{ steps.version.outputs.value }}"
+          if ($LASTEXITCODE -ne 0) { throw "cmake configure failed" }
           cmake --build plugin/build --config Release --target LorenzMIDI_VST3 --target lorenz_engine_test
+          if ($LASTEXITCODE -ne 0) { throw "cmake build failed" }
           $test = Get-ChildItem plugin\build -Recurse -Filter lorenz_engine_test.exe | Select-Object -First 1
           if (-not $test) { throw "lorenz_engine_test.exe was not built" }
           & $test.FullName
