@@ -10,6 +10,6 @@
     "test": "node tests/pipeline.test.js && node tests/attractors.test.js && node tests/presets.test.js && node tests/midi.test.js && node tests/render.test.js"
   },
   "devDependencies": {
-    "vite": "^8.2.2"
+    "vite": "^8.2.4"
   }
 }
