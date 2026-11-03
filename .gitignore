@@ -3,3 +3,4 @@ node_modules
 dist
 plugin/build
 plugin/tests/engine_test
+plugin/packaging/windows/staging
