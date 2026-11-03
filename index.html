@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>LORENZ AND FRIENDS — chaotic sequencer</title>
   <meta name="lorenz-build" content="7-system-rf" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -18,11 +15,12 @@
         <p>deterministic chaos as sequencer <span class="build-id" id="buildStamp" title="Build for this page">7-system-rf</span></p>
       </div>
       <div class="transport">
-        <button class="primary" id="playBtn">Play</button>
-        <button id="pauseBtn">Pause</button>
+        <button class="primary browser-only" id="playBtn">Play</button>
+        <button class="browser-only" id="pauseBtn">Pause</button>
+        <p class="plugin-only preset-status">MIDI follows the DAW transport.</p>
         <button id="resetBtn">Reset</button>
         <button class="danger" id="perturbBtn" title="Nudge x0 by 1e-6">Perturb seed</button>
-        <button id="copyLinkBtn" title="Copy a URL that recreates this setup">Copy link</button>
+        <button class="browser-only" id="copyLinkBtn" title="Copy a URL that recreates this setup">Copy link</button>
       </div>
     </header>
 
@@ -174,12 +172,12 @@
               <input type="range" id="lobeBPan" min="-1" max="1" step="0.05" value="0.35" />
               <output id="lobeBPanOut">0.35</output>
             </div>
-            <div class="field">
+            <div class="field browser-only">
               <label class="lbl" for="lobeAFilter">A filter</label>
               <input type="range" id="lobeAFilter" min="200" max="6000" step="10" value="900" />
               <output id="lobeAFilterOut">900</output>
             </div>
-            <div class="field">
+            <div class="field browser-only">
               <label class="lbl" for="lobeBFilter">B filter</label>
               <input type="range" id="lobeBFilter" min="200" max="6000" step="10" value="2400" />
               <output id="lobeBFilterOut">2400</output>
@@ -297,7 +295,7 @@
             <div class="field span2 checks">
               <label><input type="checkbox" id="voice1Enable" checked /><span class="voice-dot v1"></span>Voice 1 · X crossings</label>
             </div>
-            <div class="field">
+            <div class="field browser-only">
               <label class="lbl" for="voice1Wave">voice 1 waveform</label>
               <select id="voice1Wave">
                 <option>sine</option>
@@ -310,7 +308,7 @@
             <div class="field span2 checks">
               <label><input type="checkbox" id="voice2Enable" /><span class="voice-dot v2"></span>Voice 2 · Y extrema</label>
             </div>
-            <div class="field">
+            <div class="field browser-only">
               <label class="lbl" for="voice2Wave">voice 2 waveform</label>
               <select id="voice2Wave">
                 <option>sine</option>
@@ -323,7 +321,7 @@
             <div class="field span2 checks">
               <label><input type="checkbox" id="voice3Enable" /><span class="voice-dot v3"></span>Voice 3 · Z threshold</label>
             </div>
-            <div class="field">
+            <div class="field browser-only">
               <label class="lbl" for="voice3Wave">voice 3 waveform</label>
               <select id="voice3Wave">
                 <option>sine</option>
@@ -340,16 +338,16 @@
           <summary>MIDI output</summary>
           <div class="row">
             <div class="field span2 checks">
-              <label><input type="checkbox" id="internalAudio" checked /> internal synth</label>
-              <label><input type="checkbox" id="midiEnable" /> send MIDI</label>
+              <label class="browser-only"><input type="checkbox" id="internalAudio" checked /> internal synth</label>
+              <label class="browser-only"><input type="checkbox" id="midiEnable" /> send MIDI</label>
             </div>
-            <div class="field span2">
+            <div class="field span2 browser-only">
               <label class="lbl" for="midiOutput">destination</label>
               <select id="midiOutput" disabled>
                 <option value="">Connect MIDI to choose an output…</option>
               </select>
             </div>
-            <div class="field span2">
+            <div class="field span2 browser-only">
               <button type="button" id="midiConnectBtn">Connect / refresh MIDI</button>
             </div>
             <div class="field">
@@ -364,11 +362,11 @@
               <label class="lbl" for="midiChannel3">Perc channel</label>
               <input type="number" id="midiChannel3" min="1" max="16" step="1" value="10" />
             </div>
-            <p class="preset-status span2" id="midiStatus">Connect a USB synth, MIDI interface, or macOS IAC bus.</p>
+            <p class="preset-status span2 browser-only" id="midiStatus">Connect a USB synth, MIDI interface, or macOS IAC bus.</p>
           </div>
         </details>
 
-        <details class="panel">
+        <details class="panel browser-only">
           <summary>Synth</summary>
           <div class="row">
             <div class="field">
@@ -412,7 +410,7 @@
         <details class="panel">
           <summary>Modulation</summary>
           <div class="row">
-            <div class="field">
+            <div class="field browser-only">
               <label class="lbl" for="modulateFilter">filter from Z</label>
               <input type="range" id="modulateFilter" min="0" max="1" step="0.01" value="0" />
               <output id="modulateFilterOut">0.00</output>
@@ -422,7 +420,7 @@
               <input type="range" id="modulatePan" min="0" max="1" step="0.01" value="0" />
               <output id="modulatePanOut">0.00</output>
             </div>
-            <div class="field">
+            <div class="field browser-only">
               <label class="lbl" for="modulateFm">FM from velocity</label>
               <input type="range" id="modulateFm" min="0" max="1" step="0.01" value="0" />
               <output id="modulateFmOut">0.00</output>

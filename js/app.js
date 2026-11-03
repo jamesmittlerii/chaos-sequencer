@@ -8,6 +8,7 @@ import { MidiEngine } from "./midi-engine.js";
 import { ChaosEngine } from "./engine.js";
 import { Visualizer } from "./visualizer.js";
 import { hashSeed } from "./rng.js";
+import { installPluginHost } from "./plugin-host.js";
 import {
   applyPresetToDom,
   capturePreset,
@@ -24,6 +25,10 @@ import {
 } from "./presets.js";
 
 const $ = (id) => document.getElementById(id);
+
+const hostMode = typeof location !== "undefined"
+  && (location.protocol === "juce:" || location.hostname === "juce.backend");
+let publishPreset = () => {};
 
 if (["localhost", "127.0.0.1", "::1"].includes(window.location.hostname)) {
   $("buildStamp").textContent = "[local]";
@@ -409,6 +414,7 @@ function resetSim(clearLog = true) {
 }
 
 async function play() {
+  if (hostMode) return;
   applyAll();
   if (midi.enabled && !midi.access) await connectMidi();
   await audio.resume();
@@ -429,13 +435,23 @@ async function play() {
 }
 
 function pause() {
-  if (!playing) return;
+  if (hostMode || !playing) return;
   paused = true;
   engine.pause();
   audio.ctx?.suspend();
 }
 
 function reset() {
+  if (hostMode) {
+    visualizer.reset();
+    debugRows.length = 0;
+    $("debugBody").innerHTML = "";
+    $("hudNotes").textContent = "0";
+    $("hudEvents").textContent = "0";
+    $("noteReadout").textContent = "waiting for host play";
+    publishPreset(true);
+    return;
+  }
   engine.stop();
   playing = false;
   paused = false;
@@ -535,7 +551,7 @@ function currentShareUrl() {
 }
 
 function scheduleUrlSync() {
-  if (hydrating) return;
+  if (hostMode || hydrating) return;
   clearTimeout(urlSyncTimer);
   urlSyncTimer = setTimeout(() => {
     writeShareHash(capturePreset($("presetName").value.trim()));
@@ -554,7 +570,7 @@ async function copyShareLink() {
   }
 }
 
-function adoptPreset(preset, { writeUrl = true, status } = {}) {
+function adoptPreset(preset, { writeUrl = true, status, echo = true } = {}) {
   const normalized = normalizePreset(preset);
   hydrating = true;
   const systemId = normalized.params.systemId;
@@ -566,7 +582,13 @@ function adoptPreset(preset, { writeUrl = true, status } = {}) {
   refreshRangeOutputs();
   if (normalized.name) $("presetName").value = normalized.name;
   hydrating = false;
-  if (writeUrl) writeShareHash(capturePreset(normalized.name || $("presetName").value.trim()));
+  if (writeUrl && !hostMode) writeShareHash(capturePreset(normalized.name || $("presetName").value.trim()));
+  if (hostMode) {
+    visualizer.reset();
+    if (echo) publishPreset(true);
+    if (status) setPresetStatus(status);
+    return;
+  }
   if (playing) {
     engine.stop();
     resetSim(true);
@@ -627,7 +649,8 @@ function handleControlChange(event) {
   const el = event.target;
   if (!el.matches("input, select") || el.closest("[data-preset-ui]")) return;
   applyAll();
-  scheduleUrlSync();
+  if (hostMode) publishPreset(false);
+  else scheduleUrlSync();
 }
 
 document.addEventListener("input", handleControlChange);
@@ -717,6 +740,7 @@ window.addEventListener("hashchange", () => {
 });
 
 window.addEventListener("keydown", (e) => {
+  if (hostMode) return;
   if (e.target.matches("input, select, textarea")) return;
   if (e.code === "Space") {
     e.preventDefault();
@@ -764,12 +788,33 @@ function frame() {
   requestAnimationFrame(frame);
 }
 
-applyAll();
-resetSim(true);
 refreshLocalSelect();
+if (hostMode && window.__JUCE__?.backend) {
+  document.body.classList.add("plugin-host");
+  applyAll();
+  const host = installPluginHost({
+    backend: window.__JUCE__.backend,
+    visualizer,
+    capture: () => capturePreset($("presetName").value.trim()),
+    adopt: adoptPreset,
+    setReadout: (message) => {
+      $("noteReadout").textContent = message;
+    },
+    hudFrom,
+    pushDebug: (note) => {
+      if ($("diagnostics").checked) pushDebug(note);
+    },
+    refreshRangeOutputs,
+    num,
+  });
+  publishPreset = host.publish;
+} else {
+  applyAll();
+  resetSim(true);
+  requestAnimationFrame(frame);
+}
 const catalogLoad = fetchCatalogIndex();
 const locationLoad = loadFromLocation();
-requestAnimationFrame(frame);
 
 try {
   const items = await catalogLoad;
