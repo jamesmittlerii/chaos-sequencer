@@ -98,8 +98,20 @@ jobs:
           security import "$cert" -P "$MACOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
           curl -fsSL -o "$RUNNER_TEMP/DeveloperIDG2CA.cer" https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer
           curl -fsSL -o "$RUNNER_TEMP/DeveloperIDCA.cer" https://www.apple.com/certificateauthority/DeveloperIDCA.cer
-          security import "$RUNNER_TEMP/DeveloperIDG2CA.cer" -k "$keychain" -T /usr/bin/codesign -T /usr/bin/productbuild
-          security import "$RUNNER_TEMP/DeveloperIDCA.cer" -k "$keychain" -T /usr/bin/codesign -T /usr/bin/productbuild
+          import_ca() {
+            local output
+            if output=$(security import "$1" -k "$keychain" -T /usr/bin/codesign -T /usr/bin/productbuild 2>&1); then
+              printf '%s\n' "$output"
+              return 0
+            fi
+            printf '%s\n' "$output"
+            if printf '%s\n' "$output" | grep -q "already exists"; then
+              return 0
+            fi
+            return 1
+          }
+          import_ca "$RUNNER_TEMP/DeveloperIDG2CA.cer"
+          import_ca "$RUNNER_TEMP/DeveloperIDCA.cer"
           security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k "$keychain_password" "$keychain"
           security list-keychains -d user -s "$keychain"
           security default-keychain -s "$keychain"
@@ -171,7 +183,7 @@ jobs:
       - name: Build VST3
         shell: pwsh
         run: |
-          cmake -S plugin -B plugin/build -G "Visual Studio 17 2022" -A x64 -DLORENZ_VERSION="${{ steps.version.outputs.value }}"
+          cmake -S plugin -B plugin/build -G "Visual Studio 18 2026" -A x64 -DLORENZ_VERSION="${{ steps.version.outputs.value }}"
           cmake --build plugin/build --config Release --target LorenzMIDI_VST3 --target lorenz_engine_test
           $test = Get-ChildItem plugin\build -Recurse -Filter lorenz_engine_test.exe | Select-Object -First 1
           if (-not $test) { throw "lorenz_engine_test.exe was not built" }
