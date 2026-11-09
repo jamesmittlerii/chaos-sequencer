@@ -86,7 +86,7 @@ export class ChaosEngine {
    * resimulates from the seed up to `start` before emitting.
    */
   render(start, end) {
-    if (!(end > start)) return [];
+    if (end <= start) return [];
     if (Math.abs(start - this.cursor) > 1e-4) this.seek(start);
     this._advanceUntil(end, true);
 
@@ -153,8 +153,10 @@ export class ChaosEngine {
   _queueNote(note, timestamp) {
     const when = this.sequencer.schedule(timestamp);
     if (!this.sequencer.claimSlot(note.voiceId, when)) return;
-    this.pending.push({ kind: "noteOn", time: when, note });
-    this.pending.push({ kind: "noteOff", time: when + note.duration, note });
+    this.pending.push(
+      { kind: "noteOn", time: when, note },
+      { kind: "noteOff", time: when + note.duration, note },
+    );
   }
 
   _dispatch(event) {
