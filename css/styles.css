@@ -68,7 +68,7 @@ button, input, select { font-family: inherit; color: inherit; }
 
 .plugin-only { display: none; }
 body.plugin-host .plugin-only { display: block; }
-body.plugin-host .browser-only { display: none !important; }
+body.plugin-host .browser-only { display: none; }
 
 .app {
   display: grid;
@@ -333,7 +333,7 @@ input[type="number"], select {
 
 .debug th { color: var(--muted); font-weight: 500; }
 
-.hidden { display: none !important; }
+#debugPanel.hidden { display: none; }
 
 .voice-dot {
   display: inline-block;

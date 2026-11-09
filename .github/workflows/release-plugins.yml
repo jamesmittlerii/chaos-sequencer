@@ -86,7 +86,8 @@ jobs:
         env:
           MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
           MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-        run: |
+        # S2068: keychain password is generated below; the .p12 password is a GitHub secret.
+        run: | # NOSONAR
           set -euo pipefail
           cert="$RUNNER_TEMP/developer-id.p12"
           keychain="$RUNNER_TEMP/lorenz-signing.keychain-db"
@@ -96,8 +97,8 @@ jobs:
           security set-keychain-settings -lut 21600 "$keychain"
           security unlock-keychain -p "$keychain_password" "$keychain"
           security import "$cert" -P "$MACOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
-          curl -fsSL -o "$RUNNER_TEMP/DeveloperIDG2CA.cer" https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer
-          curl -fsSL -o "$RUNNER_TEMP/DeveloperIDCA.cer" https://www.apple.com/certificateauthority/DeveloperIDCA.cer
+          curl --proto '=https' --proto-redir '=https' -fsSL -o "$RUNNER_TEMP/DeveloperIDG2CA.cer" https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer
+          curl --proto '=https' --proto-redir '=https' -fsSL -o "$RUNNER_TEMP/DeveloperIDCA.cer" https://www.apple.com/certificateauthority/DeveloperIDCA.cer
           import_ca() {
             local output
             if output=$(security import "$1" -k "$keychain" -T /usr/bin/codesign -T /usr/bin/productbuild 2>&1); then
@@ -245,7 +246,7 @@ jobs:
           sha256sum Lorenz-*.pkg Lorenz-*.exe | tee SHA256SUMS
 
       - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           files: |
             dist/Lorenz-*.pkg

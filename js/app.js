@@ -736,7 +736,9 @@ $("importPresetFile").addEventListener("change", async () => {
 });
 
 window.addEventListener("hashchange", () => {
-  loadFromLocation({ replaceNamedHash: true });
+  loadFromLocation({ replaceNamedHash: true }).catch((err) => {
+    setPresetStatus(err.message || "Could not load that preset.");
+  });
 });
 
 window.addEventListener("keydown", (e) => {
@@ -745,7 +747,9 @@ window.addEventListener("keydown", (e) => {
   if (e.code === "Space") {
     e.preventDefault();
     if (playing && !paused) pause();
-    else play();
+    else play().catch((err) => {
+      $("noteReadout").textContent = err.message || "Could not start playback.";
+    });
   }
 });
 
