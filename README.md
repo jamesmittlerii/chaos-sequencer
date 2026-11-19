@@ -21,6 +21,10 @@ Live site: [https://jamesmittlerii.github.io/chaos-sequencer/](https://jamesmitt
 
 **Walkthrough:** [TUTORIAL.md](TUTORIAL.md) — first listen, mapping, lobes, voices, quantization, presets, and how to read the diagnostic log.
 
+**Architecture:** [ARCHITECTURE.md](ARCHITECTURE.md) — web, JUCE plugin, and Max for Live targets.
+
+**Max for Live:** [m4l/README.md](m4l/README.md) — MIDI Effect that reuses the same `js/` pipeline inside Ableton (`npm run build:m4l`).
+
 ```bash
 npm test    # pipeline determinism / RK4 bounds / preset encoding
 ```

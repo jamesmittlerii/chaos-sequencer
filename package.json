@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:m4l": "vite build --config vite.m4l.config.js",
     "start": "vite preview",
-    "test": "node tests/pipeline.test.js && node tests/attractors.test.js && node tests/presets.test.js && node tests/midi.test.js && node tests/render.test.js"
+    "test": "node tests/pipeline.test.js && node tests/attractors.test.js && node tests/presets.test.js && node tests/midi.test.js && node tests/render.test.js && node tests/m4l.test.js"
   },
   "devDependencies": {
     "vite": "^8.2.4"
